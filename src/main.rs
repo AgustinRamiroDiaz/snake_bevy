@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bevy::prelude::*;
 
 fn main() {
@@ -82,7 +84,7 @@ fn setup(mut commands: Commands) {
     }
     commands.spawn_batch(cells_with_mm);
 
-    commands.spawn((
+    let head = commands.spawn((
         SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
@@ -92,8 +94,14 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
         },
-        Head,
+        SnakeSegment,
     ));
+
+    // let mut segments = VecDeque::new();
+    // segments.push_front(head.id());
+
+    // commands.spawn((Snake { segments },));
+
     //     {
     //     head: SpriteBundle {
     //         sprite: Sprite {
@@ -111,18 +119,12 @@ fn setup(mut commands: Commands) {
 
 // https://www.reddit.com/r/bevy/comments/yen4hg/best_practices_when_dealing_with_a_collection_of/
 #[derive(Component)]
-struct Snake;
-// {
-//     head: SpriteBundle,
-//     body: Vec<SpriteBundle>,
-//     direction: Direction,
-// }
+struct Snake {
+    segments: VecDeque<Entity>,
+}
 
 #[derive(Component)]
-struct Chunk(SpriteBundle, Direction);
-
-#[derive(Component)]
-struct Head;
+struct SnakeSegment;
 
 #[derive(Clone)]
 enum Direction {
@@ -151,11 +153,14 @@ struct SnakeTimer(Timer);
 fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
-    mut query: Query<&mut Transform, With<Head>>,
+    mut query: Query<&mut Transform, With<SnakeSegment>>,
     mut commands: Commands,
 ) {
+    debug!("tick");
     if timer.0.tick(time.delta()).just_finished() {
         for mut s in query.iter_mut() {
+            debug!(s.translation.x);
+            debug!(s.translation.y);
             let direction = Direction::Left;
 
             s.translation += Into::<Vec3>::into(direction) * (SIZE + GAP);
@@ -168,3 +173,5 @@ fn tick(
 //         transform.translation = snake.position.extend(0.0) * (SIZE + GAP) // TODO: tidy this constant
 //     }
 // }
+
+///////////
