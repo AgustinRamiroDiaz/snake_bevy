@@ -8,16 +8,22 @@ fn main() {
 struct Person;
 
 #[derive(Component)]
+struct Pet;
+
+#[derive(Component)]
 struct Name(String);
 
 fn add_people(mut commands: Commands) {
     commands.spawn((Person, Name("peq".to_string())));
+    commands.spawn((Person, Name("peq".to_string())));
+    commands.spawn((Pet, Name("michi".to_string())));
+    commands.spawn((Name("no tengo nombre".to_string()),));
 }
 
 #[derive(Resource)]
 struct GreetTimer(Timer);
 
-fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>) {
+fn greet_people(query: Query<&Name, With<Person>>, time: Res<Time>, mut timer: ResMut<GreetTimer>) {
     if timer.0.tick(time.delta()).just_finished() {
         query
             .iter()
@@ -50,7 +56,7 @@ impl Plugin for SnakePlugin {
             TimerMode::Repeating,
         )))
         .add_systems(Startup, setup)
-        .add_systems(Update, (tick, update_chunk_transform));
+        .add_systems(Update, (tick,));
     }
 }
 
@@ -77,13 +83,6 @@ fn setup(mut commands: Commands) {
     commands.spawn_batch(cells_with_mm);
 
     commands.spawn((
-        Snake {
-            head: SnakeChunk {
-                position: Vec2::new(0.0, 0.0),
-            },
-            body: Vec::new(),
-            direction: Direction::Left,
-        },
         SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
@@ -93,15 +92,37 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
         },
+        Head,
     ));
+    //     {
+    //     head: SpriteBundle {
+    //         sprite: Sprite {
+    //             custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+    //             color: Color::BLACK,
+    //             ..Default::default()
+    //         },
+    //         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+    //         ..Default::default()
+    //     },
+    //     body: Vec::new(),
+    //     direction: Direction::Left,
+    // },
 }
 
+// https://www.reddit.com/r/bevy/comments/yen4hg/best_practices_when_dealing_with_a_collection_of/
 #[derive(Component)]
-struct Snake {
-    head: SnakeChunk,
-    body: Vec<SnakeChunk>,
-    direction: Direction,
-}
+struct Snake;
+// {
+//     head: SpriteBundle,
+//     body: Vec<SpriteBundle>,
+//     direction: Direction,
+// }
+
+#[derive(Component)]
+struct Chunk(SpriteBundle, Direction);
+
+#[derive(Component)]
+struct Head;
 
 #[derive(Clone)]
 enum Direction {
@@ -111,8 +132,8 @@ enum Direction {
     Up,
 }
 
-impl Into<Vec2> for Direction {
-    fn into(self) -> Vec2 {
+impl Into<Vec3> for Direction {
+    fn into(self) -> Vec3 {
         let x = match self {
             Direction::Down => (0, -1),
             Direction::Left => (-1, 0),
@@ -120,37 +141,30 @@ impl Into<Vec2> for Direction {
             Direction::Up => (0, 1),
         };
 
-        Vec2::new(x.0 as f32, x.1 as f32)
+        Vec2::new(x.0 as f32, x.1 as f32).extend(0.0)
     }
-}
-
-#[derive(Component)]
-struct SnakeChunk {
-    position: Vec2,
 }
 
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
-fn tick(time: Res<Time>, mut timer: ResMut<SnakeTimer>, mut query: Query<&mut Snake>) {
+fn tick(
+    time: Res<Time>,
+    mut timer: ResMut<SnakeTimer>,
+    mut query: Query<&mut Transform, With<Head>>,
+    mut commands: Commands,
+) {
     if timer.0.tick(time.delta()).just_finished() {
-        query
-            .iter_mut()
-            .map(|mut s| {
-                let direction = s.direction.clone();
-                s.head.position += Into::<Vec2>::into(direction)
-            })
-            .for_each(drop);
+        for mut s in query.iter_mut() {
+            let direction = Direction::Left;
+
+            s.translation += Into::<Vec3>::into(direction) * (SIZE + GAP);
+        }
     }
 }
 
-// fn move_snake(snake: &mut Snake) {}
-
-#[derive(Component)]
-struct IsSnake;
-
-fn update_chunk_transform(mut query: Query<(&SnakeChunk, &mut Transform)>) {
-    for (snake_chunk, mut transform) in query.iter_mut() {
-        transform.translation = snake_chunk.position.extend(0.0) * (SIZE + GAP) // TODO: tidy this constant
-    }
-}
+// fn update_chunk_transform(mut commands: Commands, mut query: Query<(&Snake, &mut Transform)>) {
+//     for (snake, mut transform) in query.iter_mut() {
+//         transform.translation = snake.position.extend(0.0) * (SIZE + GAP) // TODO: tidy this constant
+//     }
+// }
