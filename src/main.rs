@@ -8,6 +8,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     mode: WindowMode::BorderlessFullscreen,
+                    resizable: true,
                     ..default()
                 }),
                 ..default()
@@ -20,9 +21,9 @@ fn main() {
 struct SnakePlugin;
 
 const SNAKE_TICK_SECONDS: f32 = 0.1;
-const SIZE: f32 = 20.0;
+const SIZE: f32 = 30.0;
 const GAP: f32 = 4.0;
-const HALF_LEN: i32 = 20;
+const HALF_LEN: i32 = 15;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
@@ -35,10 +36,10 @@ impl Plugin for SnakePlugin {
             Update,
             (
                 tick,
-                see_snake,
                 update_local_coordinates_to_world_transforms,
                 input_snake_direction,
                 toroid_coordinates,
+                collision,
             ),
         );
     }
@@ -65,10 +66,10 @@ fn setup(mut commands: Commands) {
     }
     commands.spawn_batch(grid);
 
-    let new_black_tile = || SpriteBundle {
+    let new_tile = |color| SpriteBundle {
         sprite: Sprite {
             custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-            color: Color::BLACK,
+            color,
             ..Default::default()
         },
         ..Default::default()
@@ -76,7 +77,7 @@ fn setup(mut commands: Commands) {
 
     let head = commands
         .spawn((
-            new_black_tile(),
+            new_tile(Color::LIME_GREEN),
             SnakeSegment,
             Coordinate(Vec2::new(0.0, 0.0)),
         ))
@@ -84,7 +85,7 @@ fn setup(mut commands: Commands) {
 
     let tail = commands
         .spawn((
-            new_black_tile(),
+            new_tile(Color::LIME_GREEN),
             SnakeSegment,
             Coordinate(Vec2::new(1.0, 0.0)),
         ))
@@ -102,7 +103,7 @@ fn setup(mut commands: Commands) {
 
     let head2 = commands
         .spawn((
-            new_black_tile(),
+            new_tile(Color::PINK),
             SnakeSegment,
             Coordinate(Vec2::new(0.0, 0.0)),
         ))
@@ -137,6 +138,21 @@ struct SnakeSegment;
 #[derive(Component)]
 struct Coordinate(Vec2);
 
+impl std::hash::Hash for Coordinate {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.x.to_bits().hash(state);
+        self.0.y.to_bits().hash(state);
+    }
+}
+
+impl PartialEq for Coordinate {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.x == other.0.x && self.0.y == other.0.y
+    }
+}
+
+impl Eq for Coordinate {}
+
 fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
@@ -145,8 +161,6 @@ fn tick(
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut snake in query.iter_mut() {
-            println!("{:#?}", snake);
-
             // TODO: don't unwrap
             let &tail_entity = snake.segments.back().unwrap();
             let &head_entity = snake.segments.front().unwrap();
@@ -156,7 +170,6 @@ fn tick(
             let head_translation = head.0;
 
             if let Ok(mut tail) = entity_query.get_mut(tail_entity) {
-                println!("moving");
                 tail.0 = head_translation + Into::<Vec2>::into(snake.direction.clone());
                 snake.segments.rotate_right(1);
             }
@@ -185,7 +198,19 @@ fn toroid_coordinates(
     }
 }
 
+fn collision(query: Query<&Coordinate, With<SnakeSegment>>) {
+    let mut seen_coordinates = std::collections::HashSet::new();
+    for coordinate in query.iter() {
+        if seen_coordinates.contains(coordinate) {
+            println!("bonk");
+            return;
+        }
+        seen_coordinates.insert(coordinate);
+    }
+}
+
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
+// TODO: with this logic I can go back by pressing two keys at once
 fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Snake>) {
     for mut snake in query.iter_mut() {
         let direction = match snake.player_number {
