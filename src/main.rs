@@ -115,17 +115,23 @@ fn tick(
     mut commands: Commands,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        // println!("tick");
         for mut snake in query.iter_mut() {
             println!("{:#?}", snake);
 
-            let tail_entity = snake.segments.pop_back().unwrap();
+            // TODO: don't unwrap
+            let &tail_entity = snake.segments.back().unwrap();
+            let &head_entity = snake.segments.front().unwrap();
+
+            let head = entityQuery.get_mut(head_entity).unwrap();
+
+            let head_translation = head.translation;
 
             if let Ok(mut tail) = entityQuery.get_mut(tail_entity) {
                 println!("moving");
-                tail.translation += Into::<Vec3>::into(snake.direction.clone()) * (SIZE + GAP);
+                tail.translation =
+                    head_translation + Into::<Vec3>::into(snake.direction.clone()) * (SIZE + GAP);
+                snake.segments.rotate_right(1);
             }
-            snake.segments.push_front(tail_entity);
         }
     }
 }
