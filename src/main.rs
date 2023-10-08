@@ -104,7 +104,6 @@ fn setup(mut commands: Commands) {
     },));
 }
 
-// https://www.reddit.com/r/bevy/comments/yen4hg/best_practices_when_dealing_with_a_collection_of/
 #[derive(Component, Debug)]
 struct Snake {
     segments: VecDeque<Entity>,
@@ -121,8 +120,7 @@ fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
     mut query: Query<&mut Snake>,
-    mut entityQuery: Query<&mut Coordinate>,
-    mut commands: Commands,
+    mut entity_query: Query<&mut Coordinate>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut snake in query.iter_mut() {
@@ -132,11 +130,11 @@ fn tick(
             let &tail_entity = snake.segments.back().unwrap();
             let &head_entity = snake.segments.front().unwrap();
 
-            let head = entityQuery.get_mut(head_entity).unwrap();
+            let head = entity_query.get_mut(head_entity).unwrap();
 
             let head_translation = head.0;
 
-            if let Ok(mut tail) = entityQuery.get_mut(tail_entity) {
+            if let Ok(mut tail) = entity_query.get_mut(tail_entity) {
                 println!("moving");
                 tail.0 = head_translation + Into::<Vec2>::into(snake.direction.clone());
                 snake.segments.rotate_right(1);
