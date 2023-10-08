@@ -20,7 +20,7 @@ impl Plugin for SnakePlugin {
             TimerMode::Repeating,
         )))
         .add_systems(Startup, setup)
-        .add_systems(Update, (tick,));
+        .add_systems(Update, (tick, see_snake));
     }
 }
 
@@ -46,23 +46,41 @@ fn setup(mut commands: Commands) {
     }
     commands.spawn_batch(cells_with_mm);
 
-    let head = commands.spawn((
-        SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                color: Color::BLACK,
-                ..Default::default()
-            },
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+    let sprite_bundle_at = |x: f32, y: f32| SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+            color: Color::BLACK,
             ..Default::default()
         },
-        SnakeSegment,
-    ));
+        transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
+        ..Default::default()
+    };
 
-    // let mut segments = VecDeque::new();
-    // segments.push_front(head.id());
+    let head = commands
+        .spawn((sprite_bundle_at(0.0, 0.0), SnakeSegment))
+        .id();
+    let tail = commands.spawn((sprite_bundle_at(SIZE + GAP, 0.0),)).id();
 
-    // commands.spawn((Snake { segments },));
+    let mut segments = VecDeque::new();
+    segments.push_front(head);
+    segments.push_front(tail);
+
+    commands.spawn((Snake {
+        segments,
+        direction: Direction::Left,
+    },));
+
+    let head2 = commands
+        .spawn((sprite_bundle_at(0.0, 0.0), SnakeSegment))
+        .id();
+
+    let mut segments2 = VecDeque::new();
+    segments2.push_front(head2);
+
+    commands.spawn((Snake {
+        segments: segments2,
+        direction: Direction::Right,
+    },));
 
     //     {
     //     head: SpriteBundle {
@@ -80,9 +98,10 @@ fn setup(mut commands: Commands) {
 }
 
 // https://www.reddit.com/r/bevy/comments/yen4hg/best_practices_when_dealing_with_a_collection_of/
-#[derive(Component)]
+#[derive(Component, Debug)]
 struct Snake {
     segments: VecDeque<Entity>,
+    direction: Direction,
 }
 
 #[derive(Component)]
@@ -91,32 +110,37 @@ struct SnakeSegment;
 fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
-    mut query: Query<&mut Transform, With<SnakeSegment>>,
+    mut query: Query<&mut Snake>,
+    mut entityQuery: Query<&mut Transform>,
     mut commands: Commands,
 ) {
-    debug!("tick");
     if timer.0.tick(time.delta()).just_finished() {
-        for mut s in query.iter_mut() {
-            debug!(s.translation.x);
-            debug!(s.translation.y);
-            let direction = Direction::Left;
+        // println!("tick");
+        for mut snake in query.iter_mut() {
+            println!("{:#?}", snake);
 
-            s.translation += Into::<Vec3>::into(direction) * (SIZE + GAP);
+            let tail_entity = snake.segments.pop_back().unwrap();
+
+            if let Ok(mut tail) = entityQuery.get_mut(tail_entity) {
+                println!("moving");
+                tail.translation += Into::<Vec3>::into(snake.direction.clone()) * (SIZE + GAP);
+            }
+            snake.segments.push_front(tail_entity);
         }
     }
 }
 
-// fn update_chunk_transform(mut commands: Commands, mut query: Query<(&Snake, &mut Transform)>) {
-//     for (snake, mut transform) in query.iter_mut() {
-//         transform.translation = snake.position.extend(0.0) * (SIZE + GAP) // TODO: tidy this constant
-//     }
-// }
+fn see_snake(mut query: Query<&mut Snake>) {
+    for mut snake in query.iter_mut() {
+        println!("{:#?}", snake);
+    }
+}
 
 ///////////
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum Direction {
     Down,
     Left,
