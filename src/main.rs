@@ -1,17 +1,28 @@
 use std::collections::VecDeque;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowMode};
 
 fn main() {
-    App::new().add_plugins((DefaultPlugins, SnakePlugin)).run();
+    App::new()
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    mode: WindowMode::BorderlessFullscreen,
+                    ..default()
+                }),
+                ..default()
+            }),
+            SnakePlugin,
+        ))
+        .run();
 }
 
 struct SnakePlugin;
 
-const SNAKE_TICK_SECONDS: f32 = 0.3;
+const SNAKE_TICK_SECONDS: f32 = 0.1;
 const SIZE: f32 = 20.0;
 const GAP: f32 = 4.0;
-const HALF_LEN: i32 = 10;
+const HALF_LEN: i32 = 20;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
