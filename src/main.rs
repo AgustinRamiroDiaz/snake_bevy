@@ -136,8 +136,8 @@ fn tick(
     }
 }
 
-fn see_snake(mut query: Query<&mut Snake>) {
-    for mut snake in query.iter_mut() {
+fn see_snake(query: Query<&Snake, Changed<Snake>>) {
+    for snake in query.iter() {
         println!("{:#?}", snake);
     }
 }
