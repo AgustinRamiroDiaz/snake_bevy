@@ -26,6 +26,8 @@ impl Plugin for SnakePlugin {
                 tick,
                 see_snake,
                 update_local_coordinates_to_world_transforms,
+                input_snake_direction,
+                toroid_coordinates,
             ),
         );
     }
@@ -34,12 +36,11 @@ impl Plugin for SnakePlugin {
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
-    // cells
-    let mut cells_with_mm = vec![];
+    let mut grid = vec![];
 
     for x in -HALF_LEN..HALF_LEN {
         for y in -HALF_LEN..HALF_LEN {
-            cells_with_mm.push((
+            grid.push((
                 SpriteBundle {
                     sprite: Sprite {
                         custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
@@ -51,7 +52,7 @@ fn setup(mut commands: Commands) {
             ));
         }
     }
-    commands.spawn_batch(cells_with_mm);
+    commands.spawn_batch(grid);
 
     let new_black_tile = || SpriteBundle {
         sprite: Sprite {
@@ -85,6 +86,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((Snake {
         segments,
         direction: Direction::Left,
+        player_number: Id::One,
     },));
 
     let head2 = commands
@@ -101,6 +103,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((Snake {
         segments: segments2,
         direction: Direction::Right,
+        player_number: Id::Two,
     },));
 }
 
@@ -108,6 +111,13 @@ fn setup(mut commands: Commands) {
 struct Snake {
     segments: VecDeque<Entity>,
     direction: Direction,
+    player_number: Id,
+}
+
+#[derive(Component, Debug)]
+enum Id {
+    One,
+    Two,
 }
 
 #[derive(Component)]
@@ -151,6 +161,44 @@ fn update_local_coordinates_to_world_transforms(
     }
 }
 
+fn toroid_coordinates(
+    mut query: Query<&mut Coordinate, (With<SnakeSegment>, Changed<Coordinate>)>,
+) {
+    for mut coordinate in query.iter_mut() {
+        if coordinate.0.x.abs() > HALF_LEN as f32 {
+            coordinate.0.x = -coordinate.0.x.signum() * HALF_LEN as f32;
+        }
+        if coordinate.0.y.abs() > HALF_LEN as f32 {
+            coordinate.0.y = -coordinate.0.y.signum() * HALF_LEN as f32;
+        }
+    }
+}
+
+// Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
+fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Snake>) {
+    for mut snake in query.iter_mut() {
+        let direction =
+            if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
+                Some(Direction::Left)
+            } else if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
+                Some(Direction::Right)
+            } else if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
+                Some(Direction::Up)
+            } else if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
+                Some(Direction::Down)
+            } else {
+                None
+            };
+
+        if let Some(direction) = direction {
+            if snake.direction == !direction.clone() {
+                continue;
+            }
+            snake.direction = direction;
+        }
+    }
+}
+
 fn see_snake(query: Query<&Snake, Changed<Snake>>) {
     for snake in query.iter() {
         println!("{:#?}", snake);
@@ -161,7 +209,7 @@ fn see_snake(query: Query<&Snake, Changed<Snake>>) {
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Direction {
     Down,
     Left,
@@ -179,5 +227,18 @@ impl Into<Vec2> for Direction {
         };
 
         Vec2::new(x.0 as f32, x.1 as f32)
+    }
+}
+
+impl std::ops::Not for Direction {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+            Direction::Up => Direction::Down,
+        }
     }
 }
