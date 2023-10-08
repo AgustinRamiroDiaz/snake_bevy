@@ -49,8 +49,8 @@ fn setup(mut commands: Commands) {
 
     let mut grid = vec![];
 
-    for x in -HALF_LEN..HALF_LEN {
-        for y in -HALF_LEN..HALF_LEN {
+    for x in -HALF_LEN..=HALF_LEN {
+        for y in -HALF_LEN..=HALF_LEN {
             grid.push((
                 SpriteBundle {
                     sprite: Sprite {
@@ -188,19 +188,36 @@ fn toroid_coordinates(
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
 fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Snake>) {
     for mut snake in query.iter_mut() {
-        let direction =
-            if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
-                Some(Direction::Left)
-            } else if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
-                Some(Direction::Right)
-            } else if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
-                Some(Direction::Up)
-            } else if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
-                Some(Direction::Down)
-            } else {
-                None
-            };
+        let direction = match snake.player_number {
+            Id::One => {
+                if keyboard_input.pressed(KeyCode::Left) {
+                    Some(Direction::Left)
+                } else if keyboard_input.pressed(KeyCode::Right) {
+                    Some(Direction::Right)
+                } else if keyboard_input.pressed(KeyCode::Up) {
+                    Some(Direction::Up)
+                } else if keyboard_input.pressed(KeyCode::Down) {
+                    Some(Direction::Down)
+                } else {
+                    None
+                }
+            }
+            Id::Two => {
+                if keyboard_input.pressed(KeyCode::A) {
+                    Some(Direction::Left)
+                } else if keyboard_input.pressed(KeyCode::D) {
+                    Some(Direction::Right)
+                } else if keyboard_input.pressed(KeyCode::W) {
+                    Some(Direction::Up)
+                } else if keyboard_input.pressed(KeyCode::S) {
+                    Some(Direction::Down)
+                } else {
+                    None
+                }
+            }
+        };
 
+        // You cannot go back into yourself
         if let Some(direction) = direction {
             if snake.direction == !direction.clone() {
                 continue;
