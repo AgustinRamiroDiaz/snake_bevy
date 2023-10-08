@@ -39,33 +39,32 @@ fn setup(mut commands: Commands) {
 
     for x in -HALF_LEN..HALF_LEN {
         for y in -HALF_LEN..HALF_LEN {
-            let pos = Vec3::new(x as f32 * (SIZE + GAP), y as f32 * (SIZE + GAP), 0.0);
-            // dbg!(&pos);
-            cells_with_mm.push((SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+            cells_with_mm.push((
+                SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
-                transform: Transform::from_translation(pos),
-                ..Default::default()
-            },));
+                Coordinate(Vec2::new(x as f32, y as f32)),
+            ));
         }
     }
     commands.spawn_batch(cells_with_mm);
 
-    let sprite_bundle_at = |x: f32, y: f32| SpriteBundle {
+    let new_black_tile = || SpriteBundle {
         sprite: Sprite {
             custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
             color: Color::BLACK,
             ..Default::default()
         },
-        transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
         ..Default::default()
     };
 
     let head = commands
         .spawn((
-            sprite_bundle_at(0.0, 0.0),
+            new_black_tile(),
             SnakeSegment,
             Coordinate(Vec2::new(0.0, 0.0)),
         ))
@@ -73,7 +72,7 @@ fn setup(mut commands: Commands) {
 
     let tail = commands
         .spawn((
-            sprite_bundle_at(SIZE + GAP, 0.0),
+            new_black_tile(),
             SnakeSegment,
             Coordinate(Vec2::new(1.0, 0.0)),
         ))
@@ -90,7 +89,7 @@ fn setup(mut commands: Commands) {
 
     let head2 = commands
         .spawn((
-            sprite_bundle_at(0.0, 0.0),
+            new_black_tile(),
             SnakeSegment,
             Coordinate(Vec2::new(0.0, 0.0)),
         ))
