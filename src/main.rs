@@ -37,13 +37,13 @@ impl Plugin for SnakePlugin {
             Update,
             (
                 tick,
-                update_local_coordinates_to_world_transforms,
                 input_snake_direction,
                 toroid_coordinates,
                 collision,
+                eat_apple,
             ),
         )
-        .add_systems(Update, (eat_apple,));
+        .add_systems(PreUpdate, (update_local_coordinates_to_world_transforms,));
     }
 }
 
