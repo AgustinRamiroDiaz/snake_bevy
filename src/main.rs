@@ -41,7 +41,8 @@ impl Plugin for SnakePlugin {
                 toroid_coordinates,
                 collision,
             ),
-        );
+        )
+        .add_systems(Update, (eat_apple,));
     }
 }
 
@@ -105,7 +106,7 @@ fn setup(mut commands: Commands) {
         .spawn((
             new_tile(Color::PINK),
             SnakeSegment,
-            Coordinate(Vec2::new(0.0, 0.0)),
+            Coordinate(Vec2::new(0.0, 1.0)),
         ))
         .id();
 
@@ -117,6 +118,8 @@ fn setup(mut commands: Commands) {
         direction: Direction::Right,
         player_number: Id::Two,
     },));
+
+    commands.spawn((new_tile(Color::RED), Apple, Coordinate(Vec2::new(5.0, 5.0))));
 }
 
 #[derive(Component, Debug)]
@@ -134,6 +137,9 @@ enum Id {
 
 #[derive(Component)]
 struct SnakeSegment;
+
+#[derive(Component)]
+struct Apple;
 
 #[derive(Component)]
 struct Coordinate(Vec2);
@@ -206,6 +212,34 @@ fn collision(query: Query<&Coordinate, With<SnakeSegment>>) {
             return;
         }
         seen_coordinates.insert(coordinate);
+    }
+}
+
+fn eat_apple(
+    mut commands: Commands,
+    snake_segments: Query<&Coordinate, With<SnakeSegment>>,
+    apples: Query<(Entity, &Coordinate), With<Apple>>,
+) {
+    let snake_segments = snake_segments
+        .iter()
+        .collect::<std::collections::HashSet<_>>();
+
+    for (apple, coord) in apples.iter() {
+        if snake_segments.contains(&coord) {
+            commands.entity(apple).despawn();
+            commands.spawn((
+                Apple,
+                SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                        color: Color::RED,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                Coordinate(Vec2::new(5.0, 5.0)),
+            ));
+        }
     }
 }
 
