@@ -20,7 +20,14 @@ impl Plugin for SnakePlugin {
             TimerMode::Repeating,
         )))
         .add_systems(Startup, setup)
-        .add_systems(Update, (tick, see_snake));
+        .add_systems(
+            Update,
+            (
+                tick,
+                see_snake,
+                update_local_coordinates_to_world_transforms,
+            ),
+        );
     }
 }
 
@@ -57,9 +64,20 @@ fn setup(mut commands: Commands) {
     };
 
     let head = commands
-        .spawn((sprite_bundle_at(0.0, 0.0), SnakeSegment))
+        .spawn((
+            sprite_bundle_at(0.0, 0.0),
+            SnakeSegment,
+            Coordinate(Vec2::new(0.0, 0.0)),
+        ))
         .id();
-    let tail = commands.spawn((sprite_bundle_at(SIZE + GAP, 0.0),)).id();
+
+    let tail = commands
+        .spawn((
+            sprite_bundle_at(SIZE + GAP, 0.0),
+            SnakeSegment,
+            Coordinate(Vec2::new(1.0, 0.0)),
+        ))
+        .id();
 
     let mut segments = VecDeque::new();
     segments.push_front(head);
@@ -71,7 +89,11 @@ fn setup(mut commands: Commands) {
     },));
 
     let head2 = commands
-        .spawn((sprite_bundle_at(0.0, 0.0), SnakeSegment))
+        .spawn((
+            sprite_bundle_at(0.0, 0.0),
+            SnakeSegment,
+            Coordinate(Vec2::new(0.0, 0.0)),
+        ))
         .id();
 
     let mut segments2 = VecDeque::new();
@@ -81,20 +103,6 @@ fn setup(mut commands: Commands) {
         segments: segments2,
         direction: Direction::Right,
     },));
-
-    //     {
-    //     head: SpriteBundle {
-    //         sprite: Sprite {
-    //             custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-    //             color: Color::BLACK,
-    //             ..Default::default()
-    //         },
-    //         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-    //         ..Default::default()
-    //     },
-    //     body: Vec::new(),
-    //     direction: Direction::Left,
-    // },
 }
 
 // https://www.reddit.com/r/bevy/comments/yen4hg/best_practices_when_dealing_with_a_collection_of/
@@ -107,11 +115,14 @@ struct Snake {
 #[derive(Component)]
 struct SnakeSegment;
 
+#[derive(Component)]
+struct Coordinate(Vec2);
+
 fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
     mut query: Query<&mut Snake>,
-    mut entityQuery: Query<&mut Transform>,
+    mut entityQuery: Query<&mut Coordinate>,
     mut commands: Commands,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
@@ -124,15 +135,22 @@ fn tick(
 
             let head = entityQuery.get_mut(head_entity).unwrap();
 
-            let head_translation = head.translation;
+            let head_translation = head.0;
 
             if let Ok(mut tail) = entityQuery.get_mut(tail_entity) {
                 println!("moving");
-                tail.translation =
-                    head_translation + Into::<Vec3>::into(snake.direction.clone()) * (SIZE + GAP);
+                tail.0 = head_translation + Into::<Vec2>::into(snake.direction.clone());
                 snake.segments.rotate_right(1);
             }
         }
+    }
+}
+
+fn update_local_coordinates_to_world_transforms(
+    mut query: Query<(&Coordinate, &mut Transform), Changed<Coordinate>>,
+) {
+    for (coordinate, mut transform) in query.iter_mut() {
+        transform.translation = coordinate.0.extend(0.0) * (SIZE + GAP)
     }
 }
 
@@ -154,8 +172,8 @@ enum Direction {
     Up,
 }
 
-impl Into<Vec3> for Direction {
-    fn into(self) -> Vec3 {
+impl Into<Vec2> for Direction {
+    fn into(self) -> Vec2 {
         let x = match self {
             Direction::Down => (0, -1),
             Direction::Left => (-1, 0),
@@ -163,6 +181,6 @@ impl Into<Vec3> for Direction {
             Direction::Up => (0, 1),
         };
 
-        Vec2::new(x.0 as f32, x.1 as f32).extend(0.0)
+        Vec2::new(x.0 as f32, x.1 as f32)
     }
 }
