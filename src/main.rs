@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, window::WindowMode};
+use rand::Rng;
 
 fn main() {
     App::new()
@@ -237,7 +238,10 @@ fn eat_apple(
                     },
                     ..Default::default()
                 },
-                Coordinate(Vec2::new(5.0, 5.0)),
+                Coordinate(Vec2::new(
+                    rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
+                    rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
+                )),
             ));
         }
     }
