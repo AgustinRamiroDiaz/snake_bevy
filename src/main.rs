@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 
 use bevy::{prelude::*, window::WindowMode};
 use rand::Rng;
@@ -58,6 +58,7 @@ fn setup(mut commands: Commands) {
                 SpriteBundle {
                     sprite: Sprite {
                         custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                        color: Color::DARK_GRAY,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -216,33 +217,60 @@ fn collision(query: Query<&Coordinate, With<SnakeSegment>>) {
     }
 }
 
+// TODO grow snake
 fn eat_apple(
     mut commands: Commands,
     snake_segments: Query<&Coordinate, With<SnakeSegment>>,
+    mut snakes: Query<&mut Snake>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
 ) {
-    let snake_segments = snake_segments
-        .iter()
-        .collect::<std::collections::HashSet<_>>();
+    // let snake_segments = snake_segments
+    //     .iter()
+    //     .collect::<std::collections::HashSet<_>>();
 
-    for (apple, coord) in apples.iter() {
-        if snake_segments.contains(&coord) {
-            commands.entity(apple).despawn();
-            commands.spawn((
-                Apple,
-                SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                        color: Color::RED,
+    for mut snake in snakes.iter_mut() {
+        let segments = snake.segments.iter().flat_map(|&e| snake_segments.get(e));
+
+        let segments: HashSet<&Coordinate> = HashSet::from_iter(segments);
+
+        for (apple, coord) in apples.iter() {
+            if segments.contains(&coord) {
+                commands.entity(apple).despawn();
+                commands.spawn((
+                    Apple,
+                    SpriteBundle {
+                        sprite: Sprite {
+                            custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                            color: Color::RED,
+                            ..Default::default()
+                        },
                         ..Default::default()
                     },
-                    ..Default::default()
-                },
-                Coordinate(Vec2::new(
-                    rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
-                    rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
-                )),
-            ));
+                    Coordinate(Vec2::new(
+                        rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
+                        rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
+                    )),
+                ));
+
+                let x = 5.0; // TODO
+                let y = 6.0; // TODO
+                let tail = commands
+                    .spawn((
+                        SpriteBundle {
+                            sprite: Sprite {
+                                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                                color: Color::LIME_GREEN,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                        SnakeSegment,
+                        Coordinate(Vec2::new(x, y)),
+                    ))
+                    .id();
+
+                snake.segments.push_back(tail);
+            }
         }
     }
 }
