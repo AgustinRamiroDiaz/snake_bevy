@@ -35,15 +35,15 @@ impl Plugin for SnakePlugin {
         .add_systems(Startup, setup)
         .add_systems(
             Update,
-            (
-                tick,
-                input_snake_direction,
-                toroid_coordinates,
-                collision,
-                eat_apple,
-            ),
+            (tick, input_snake_direction, toroid_coordinates, eat_apple),
         )
-        .add_systems(PreUpdate, (update_local_coordinates_to_world_transforms,));
+        .add_systems(
+            PreUpdate,
+            (
+                update_local_coordinates_to_world_transforms,
+                add_sprite_bundles,
+            ),
+        );
     }
 }
 
@@ -63,65 +63,54 @@ fn setup(mut commands: Commands) {
                     },
                     ..Default::default()
                 },
+                MyColor(Color::DARK_GRAY),
                 Coordinate(Vec2::new(x as f32, y as f32)),
             ));
         }
     }
     commands.spawn_batch(grid);
 
-    let new_tile = |color| SpriteBundle {
-        sprite: Sprite {
-            custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-            color,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let snake_color_a = MyColor(Color::LIME_GREEN);
 
-    let head = commands
-        .spawn((
-            new_tile(Color::LIME_GREEN),
-            SnakeSegment,
-            Coordinate(Vec2::new(0.0, 0.0)),
-        ))
+    let head_a = commands
+        .spawn((snake_color_a, SnakeSegment, Coordinate::from((0.0, 0.0))))
         .id();
 
-    let tail = commands
-        .spawn((
-            new_tile(Color::LIME_GREEN),
-            SnakeSegment,
-            Coordinate(Vec2::new(1.0, 0.0)),
-        ))
+    let tail_a = commands
+        .spawn((snake_color_a, SnakeSegment, Coordinate::from((1.0, 0.0))))
         .id();
 
     let mut segments = VecDeque::new();
-    segments.push_front(head);
-    segments.push_front(tail);
+    segments.push_front(head_a);
+    segments.push_front(tail_a);
 
-    commands.spawn((Snake {
-        segments,
-        direction: Direction::Left,
-        player_number: Id::One,
-    },));
+    commands.spawn((
+        Snake {
+            segments,
+            direction: Direction::Left,
+            player_number: Id::One,
+        },
+        snake_color_a,
+    ));
 
-    let head2 = commands
-        .spawn((
-            new_tile(Color::PINK),
-            SnakeSegment,
-            Coordinate(Vec2::new(0.0, 1.0)),
-        ))
+    let snake_color_b = MyColor(Color::PINK);
+    let head_b = commands
+        .spawn((snake_color_b, SnakeSegment, Coordinate::from((0.0, 1.0))))
         .id();
 
-    let mut segments2 = VecDeque::new();
-    segments2.push_front(head2);
+    let mut segments_b = VecDeque::new();
+    segments_b.push_front(head_b);
 
-    commands.spawn((Snake {
-        segments: segments2,
-        direction: Direction::Right,
-        player_number: Id::Two,
-    },));
+    commands.spawn((
+        Snake {
+            segments: segments_b,
+            direction: Direction::Right,
+            player_number: Id::Two,
+        },
+        snake_color_b,
+    ));
 
-    commands.spawn((new_tile(Color::RED), Apple, Coordinate(Vec2::new(5.0, 5.0))));
+    commands.spawn((MyColor(Color::RED), Apple, Coordinate(Vec2::new(5.0, 5.0))));
 }
 
 #[derive(Component, Debug)]
@@ -143,8 +132,20 @@ struct SnakeSegment;
 #[derive(Component)]
 struct Apple;
 
+#[derive(Component, Clone, Copy)]
+struct MyColor(Color);
+
 #[derive(Component)]
 struct Coordinate(Vec2);
+
+impl<T> From<(T, T)> for Coordinate
+where
+    T: Into<f32>,
+{
+    fn from(value: (T, T)) -> Self {
+        Self(Vec2::new(value.0.into(), value.1.into()))
+    }
+}
 
 impl std::hash::Hash for Coordinate {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -189,7 +190,25 @@ fn update_local_coordinates_to_world_transforms(
     mut query: Query<(&Coordinate, &mut Transform), Changed<Coordinate>>,
 ) {
     for (coordinate, mut transform) in query.iter_mut() {
-        transform.translation = coordinate.0.extend(0.0) * (SIZE + GAP)
+        transform.translation = coordinate.0.extend(0.0) * (SIZE + GAP) // TODO: this logic is duplicated
+    }
+}
+
+// TODO: we assume that Transform == SpriteBundle
+fn add_sprite_bundles(
+    mut query: Query<(Entity, &Coordinate, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
+    mut commands: Commands,
+) {
+    for (entity, coordinate, color) in query.iter_mut() {
+        commands.entity(entity).insert(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                color: color.0,
+                ..Default::default()
+            },
+            transform: Transform::from_translation(coordinate.0.extend(0.0) * (SIZE + GAP)),
+            ..Default::default()
+        });
     }
 }
 
@@ -217,18 +236,14 @@ fn collision(query: Query<&Coordinate, With<SnakeSegment>>) {
     }
 }
 
-// TODO grow snake
+// TODO: this could be more efficient by only checking the head. That would imply also changing the logic of where the apple spawns
 fn eat_apple(
     mut commands: Commands,
     snake_segments: Query<&Coordinate, With<SnakeSegment>>,
-    mut snakes: Query<&mut Snake>,
+    mut snakes: Query<(&mut Snake, &MyColor)>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
 ) {
-    // let snake_segments = snake_segments
-    //     .iter()
-    //     .collect::<std::collections::HashSet<_>>();
-
-    for mut snake in snakes.iter_mut() {
+    for (mut snake, &color) in snakes.iter_mut() {
         let segments = snake.segments.iter().flat_map(|&e| snake_segments.get(e));
 
         let segments: HashSet<&Coordinate> = HashSet::from_iter(segments);
@@ -238,14 +253,7 @@ fn eat_apple(
                 commands.entity(apple).despawn();
                 commands.spawn((
                     Apple,
-                    SpriteBundle {
-                        sprite: Sprite {
-                            custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                            color: Color::RED,
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    },
+                    MyColor(Color::RED),
                     Coordinate(Vec2::new(
                         rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
                         rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
@@ -255,18 +263,7 @@ fn eat_apple(
                 let x = 5.0; // TODO
                 let y = 6.0; // TODO
                 let tail = commands
-                    .spawn((
-                        SpriteBundle {
-                            sprite: Sprite {
-                                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                                color: Color::LIME_GREEN,
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        },
-                        SnakeSegment,
-                        Coordinate(Vec2::new(x, y)),
-                    ))
+                    .spawn((color, SnakeSegment, Coordinate(Vec2::new(x, y))))
                     .id();
 
                 snake.segments.push_back(tail);
