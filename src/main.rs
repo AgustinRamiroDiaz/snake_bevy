@@ -3,6 +3,9 @@ use std::collections::{HashSet, VecDeque};
 use bevy::{prelude::*, window::WindowMode};
 use rand::Rng;
 
+mod coordinate;
+use coordinate::Coordinate;
+
 fn main() {
     App::new()
         .add_plugins((
@@ -89,6 +92,7 @@ fn setup(mut commands: Commands) {
             segments,
             direction: Direction::Left,
             player_number: Id::One,
+            trail: Coordinate::from((0.0, 0.0)),
         },
         snake_color_a,
     ));
@@ -106,21 +110,23 @@ fn setup(mut commands: Commands) {
             segments: segments_b,
             direction: Direction::Right,
             player_number: Id::Two,
+            trail: Coordinate::from((0.0, 1.0)),
         },
         snake_color_b,
     ));
 
-    commands.spawn((MyColor(Color::RED), Apple, Coordinate(Vec2::new(5.0, 5.0))));
+    commands.spawn((MyColor(Color::RED), Apple, Coordinate::from((5.0, 5.0))));
 }
 
-#[derive(Component, Debug)]
+#[derive(Component)]
 struct Snake {
     segments: VecDeque<Entity>,
     direction: Direction,
     player_number: Id,
+    trail: Coordinate,
 }
 
-#[derive(Component, Debug)]
+#[derive(Component)]
 enum Id {
     One,
     Two,
@@ -134,33 +140,6 @@ struct Apple;
 
 #[derive(Component, Clone, Copy)]
 struct MyColor(Color);
-
-#[derive(Component)]
-struct Coordinate(Vec2);
-
-impl<T> From<(T, T)> for Coordinate
-where
-    T: Into<f32>,
-{
-    fn from(value: (T, T)) -> Self {
-        Self(Vec2::new(value.0.into(), value.1.into()))
-    }
-}
-
-impl std::hash::Hash for Coordinate {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.x.to_bits().hash(state);
-        self.0.y.to_bits().hash(state);
-    }
-}
-
-impl PartialEq for Coordinate {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.x == other.0.x && self.0.y == other.0.y
-    }
-}
-
-impl Eq for Coordinate {}
 
 fn tick(
     time: Res<Time>,
@@ -179,6 +158,7 @@ fn tick(
             let head_translation = head.0;
 
             if let Ok(mut tail) = entity_query.get_mut(tail_entity) {
+                snake.trail = Coordinate(tail.0); // TODO: remove double conversion
                 tail.0 = head_translation + Into::<Vec2>::into(snake.direction.clone());
                 snake.segments.rotate_right(1);
             }
@@ -237,6 +217,7 @@ fn collision(query: Query<&Coordinate, With<SnakeSegment>>) {
 }
 
 // TODO: this could be more efficient by only checking the head. That would imply also changing the logic of where the apple spawns
+// TODO: decouple this logic into smaller units
 fn eat_apple(
     mut commands: Commands,
     snake_segments: Query<&Coordinate, With<SnakeSegment>>,
@@ -260,10 +241,8 @@ fn eat_apple(
                     )),
                 ));
 
-                let x = 5.0; // TODO
-                let y = 6.0; // TODO
                 let tail = commands
-                    .spawn((color, SnakeSegment, Coordinate(Vec2::new(x, y))))
+                    .spawn((color, SnakeSegment, snake.trail.clone()))
                     .id();
 
                 snake.segments.push_back(tail);
@@ -312,12 +291,6 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
             }
             snake.direction = direction;
         }
-    }
-}
-
-fn see_snake(query: Query<&Snake, Changed<Snake>>) {
-    for snake in query.iter() {
-        println!("{:#?}", snake);
     }
 }
 
