@@ -96,6 +96,7 @@ fn setup(mut commands: Commands) {
             direction: Direction::Left,
             player_number: Id::One,
             trail: Coordinate::from((0.0, 0.0)),
+            input_blocked: false,
         },
         snake_color_a,
     ));
@@ -114,6 +115,7 @@ fn setup(mut commands: Commands) {
             direction: Direction::Right,
             player_number: Id::Two,
             trail: Coordinate::from((0.0, 1.0)),
+            input_blocked: false,
         },
         snake_color_b,
     ));
@@ -127,6 +129,7 @@ struct Snake {
     direction: Direction,
     player_number: Id,
     trail: Coordinate,
+    input_blocked: bool,
 }
 
 #[derive(Component)]
@@ -152,6 +155,7 @@ fn tick(
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut snake in query.iter_mut() {
+            snake.input_blocked = false;
             // TODO: don't unwrap
             let &tail_entity = snake.segments.back().unwrap();
             let &head_entity = snake.segments.front().unwrap();
@@ -257,7 +261,7 @@ fn eat_apple(
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
 // TODO: with this logic I can go back by pressing two keys at once
 fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Snake>) {
-    for mut snake in query.iter_mut() {
+    for mut snake in query.iter_mut().filter(|snake| !snake.input_blocked) {
         let direction = match snake.player_number {
             Id::One => {
                 if keyboard_input.pressed(KeyCode::Left) {
@@ -292,7 +296,11 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
             if snake.direction == !direction.clone() {
                 continue;
             }
+            if snake.direction == direction {
+                continue;
+            }
             snake.direction = direction;
+            snake.input_blocked = true;
         }
     }
 }
