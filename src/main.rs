@@ -31,6 +31,8 @@ const SNAKE_TICK_SECONDS: f32 = 0.1;
 const SIZE: f32 = 30.0;
 const GAP: f32 = 4.0;
 const HALF_LEN: i32 = 15;
+const INMORTAL_TICKS: u8 = 10;
+const CHUNKS_LOST_PER_HIT: u8 = 3;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
@@ -41,7 +43,13 @@ impl Plugin for SnakePlugin {
         .add_systems(Startup, setup)
         .add_systems(
             Update,
-            (tick, input_snake_direction, toroid_coordinates, eat_apple),
+            (
+                tick,
+                input_snake_direction,
+                toroid_coordinates,
+                eat_apple,
+                collision,
+            ),
         )
         .add_systems(
             PreUpdate,
@@ -97,6 +105,7 @@ fn setup(mut commands: Commands) {
             player_number: Id::One,
             trail: Coordinate::from((0.0, 0.0)),
             input_blocked: false,
+            inmortal_ticks: 0,
         },
         snake_color_a,
     ));
@@ -116,6 +125,7 @@ fn setup(mut commands: Commands) {
             player_number: Id::Two,
             trail: Coordinate::from((0.0, 1.0)),
             input_blocked: false,
+            inmortal_ticks: 0,
         },
         snake_color_b,
     ));
@@ -130,6 +140,7 @@ struct Snake {
     player_number: Id,
     trail: Coordinate,
     input_blocked: bool,
+    inmortal_ticks: u8,
 }
 
 #[derive(Component)]
@@ -156,6 +167,7 @@ fn tick(
     if timer.0.tick(time.delta()).just_finished() {
         for mut snake in query.iter_mut() {
             snake.input_blocked = false;
+            snake.inmortal_ticks = snake.inmortal_ticks.saturating_sub(1);
             // TODO: don't unwrap
             let &tail_entity = snake.segments.back().unwrap();
             let &head_entity = snake.segments.front().unwrap();
@@ -212,14 +224,44 @@ fn toroid_coordinates(
     }
 }
 
-fn collision(query: Query<&Coordinate, With<SnakeSegment>>) {
+// TODO: handle heads collisions
+fn collision(
+    mut commands: Commands,
+    mut snake_query: Query<(Entity, &mut Snake)>,
+    query: Query<&Coordinate, With<SnakeSegment>>,
+) {
     let mut seen_coordinates = std::collections::HashSet::new();
-    for coordinate in query.iter() {
-        if seen_coordinates.contains(coordinate) {
-            println!("bonk");
-            return;
+
+    for (entity, snake) in snake_query.iter() {
+        snake
+            .segments
+            .iter()
+            .skip(1)
+            .flat_map(|&e| query.get(e))
+            .for_each(|e| {
+                seen_coordinates.insert(e);
+            });
+    }
+
+    for (_, mut snake) in snake_query
+        .iter_mut()
+        .filter(|snake| snake.inmortal_ticks == 0)
+    {
+        let &head = snake.segments.front().unwrap();
+        let head_coordinate = query.get(head).unwrap();
+
+        if seen_coordinates.contains(head_coordinate) {
+            for _ in 0..CHUNKS_LOST_PER_HIT {
+                if snake.segments.len() == 1 {
+                    break;
+                }
+
+                commands
+                    .entity(snake.segments.pop_back().unwrap())
+                    .despawn_recursive();
+            }
+            snake.inmortal_ticks = INMORTAL_TICKS;
         }
-        seen_coordinates.insert(coordinate);
     }
 }
 
