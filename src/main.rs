@@ -227,12 +227,12 @@ fn toroid_coordinates(
 // TODO: handle heads collisions
 fn collision(
     mut commands: Commands,
-    mut snake_query: Query<(Entity, &mut Snake)>,
+    mut snake_query: Query<&mut Snake>,
     query: Query<&Coordinate, With<SnakeSegment>>,
 ) {
     let mut seen_coordinates = std::collections::HashSet::new();
 
-    for (entity, snake) in snake_query.iter() {
+    for snake in snake_query.iter() {
         snake
             .segments
             .iter()
@@ -243,7 +243,7 @@ fn collision(
             });
     }
 
-    for (_, mut snake) in snake_query
+    for mut snake in snake_query
         .iter_mut()
         .filter(|snake| snake.inmortal_ticks == 0)
     {
