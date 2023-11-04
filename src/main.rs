@@ -16,7 +16,7 @@ fn main() {
                 primary_window: Some(Window {
                     #[cfg(not(target_arch = "wasm32"))] // Borderless looks distorted when running in the web
                     mode: WindowMode::BorderlessFullscreen,
-
+                    fit_canvas_to_parent: true,
                     resizable: true,
                     ..default()
                 }),
@@ -188,7 +188,7 @@ fn tick(
 }
 
 fn update_local_coordinates_to_world_transforms(
-    mut query: Query<(&Coordinate, &mut Transform), Changed<Coordinate>>,
+    mut query: Query<(&Coordinate, &mut Transform), Or<(Changed<Coordinate>, Changed<Transform>)>>,
 ) {
     for (coordinate, mut transform) in query.iter_mut() {
         transform.translation = coordinate.0.extend(0.0) * (SIZE + GAP) // TODO: this logic is duplicated
@@ -207,7 +207,7 @@ fn add_sprite_bundles(
                 color: color.0,
                 ..Default::default()
             },
-            transform: Transform::from_translation(coordinate.0.extend(0.0) * (SIZE + GAP)),
+            // transform: Transform::from_translation(Vec3::ZERO),
             ..Default::default()
         });
     }
@@ -231,7 +231,13 @@ fn collision(
     mut commands: Commands,
     mut snake_query: Query<&mut Snake>,
     query: Query<&Coordinate, With<SnakeSegment>>,
+    changed_coordinates: Query<Entity, Changed<Coordinate>>,
 ) {
+    if changed_coordinates.iter().count() == 0 {
+        // TODO: find a better way to do this
+        return;
+    }
+
     let mut seen_coordinates = std::collections::HashSet::new();
 
     for snake in snake_query.iter() {
