@@ -39,6 +39,8 @@ const PADDING: f32 = 10.0;
 const BOARD_VIEWPORT_IN_WORLD_UNITS: f32 =
     SIZE + 2.0 * (SIZE + GAP) * HALF_LEN as f32 + 2.0 * PADDING;
 
+const NUMBER_OF_PLAYERS: usize = 4;
+
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SnakeTimer(Timer::from_seconds(
@@ -88,51 +90,61 @@ fn setup(mut commands: Commands) {
     }
     commands.spawn_batch(grid);
 
-    let snake_color_a = MyColor(Color::LIME_GREEN);
+    let mut spawn_snake = |id, spawn_coord: Coordinate, direction: Direction, color: MyColor| {
+        let head_a = commands
+            .spawn((color, SnakeSegment, spawn_coord.clone()))
+            .id();
 
-    let head_a = commands
-        .spawn((snake_color_a, SnakeSegment, Coordinate::from((0.0, 0.0))))
-        .id();
+        let mut segments = VecDeque::new();
+        segments.push_front(head_a);
 
-    let tail_a = commands
-        .spawn((snake_color_a, SnakeSegment, Coordinate::from((1.0, 0.0))))
-        .id();
+        commands.spawn((
+            Snake {
+                segments,
+                player_number: id,
+                direction: direction.clone(),
+                trail: Coordinate(
+                    spawn_coord.0 - <direction::Direction as Into<Vec2>>::into(direction),
+                ),
+                input_blocked: false,
+                inmortal_ticks: 0,
+            },
+            color,
+        ));
+    };
 
-    let mut segments = VecDeque::new();
-    segments.push_front(head_a);
-    segments.push_front(tail_a);
+    let snakes = [
+        (
+            Id::One,
+            Coordinate::from((-3.0, 0.0)),
+            Direction::Right,
+            MyColor(Color::LIME_GREEN),
+        ),
+        (
+            Id::Two,
+            Coordinate::from((3.0, 0.0)),
+            Direction::Left,
+            MyColor(Color::PINK),
+        ),
+        (
+            Id::Three,
+            Coordinate::from((0.0, 3.0)),
+            Direction::Down,
+            MyColor(Color::SALMON),
+        ),
+        (
+            Id::Four,
+            Coordinate::from((0.0, -3.0)),
+            Direction::Up,
+            MyColor(Color::TURQUOISE),
+        ),
+    ];
 
-    commands.spawn((
-        Snake {
-            segments,
-            direction: Direction::Left,
-            player_number: Id::One,
-            trail: Coordinate::from((0.0, 0.0)),
-            input_blocked: false,
-            inmortal_ticks: 0,
-        },
-        snake_color_a,
-    ));
-
-    let snake_color_b = MyColor(Color::PINK);
-    let head_b = commands
-        .spawn((snake_color_b, SnakeSegment, Coordinate::from((0.0, 1.0))))
-        .id();
-
-    let mut segments_b = VecDeque::new();
-    segments_b.push_front(head_b);
-
-    commands.spawn((
-        Snake {
-            segments: segments_b,
-            direction: Direction::Right,
-            player_number: Id::Two,
-            trail: Coordinate::from((0.0, 1.0)),
-            input_blocked: false,
-            inmortal_ticks: 0,
-        },
-        snake_color_b,
-    ));
+    snakes
+        .into_iter()
+        .take(NUMBER_OF_PLAYERS)
+        .map(|(id, coord, direction, color)| spawn_snake(id, coord, direction, color))
+        .count();
 
     commands.spawn((MyColor(Color::RED), Apple, Coordinate::from((5.0, 5.0))));
     commands.spawn(Camera2dBundle {
@@ -149,8 +161,7 @@ fn setup(mut commands: Commands) {
     });
 
     commands.spawn((
-        TextBundle::from_sections((0..2).map(|_| {
-            // TODO: remove hardcoded 0..2 to be able to scale game to more players
+        TextBundle::from_sections((0..NUMBER_OF_PLAYERS).map(|_| {
             TextSection::new(
                 "Placeholder",
                 TextStyle {
@@ -185,6 +196,8 @@ struct Snake {
 enum Id {
     One,
     Two,
+    Three,
+    Four,
 }
 
 #[derive(Component)]
@@ -389,6 +402,32 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
                 } else if keyboard_input.pressed(KeyCode::W) {
                     Some(Direction::Up)
                 } else if keyboard_input.pressed(KeyCode::S) {
+                    Some(Direction::Down)
+                } else {
+                    None
+                }
+            }
+            Id::Three => {
+                if keyboard_input.pressed(KeyCode::J) {
+                    Some(Direction::Left)
+                } else if keyboard_input.pressed(KeyCode::L) {
+                    Some(Direction::Right)
+                } else if keyboard_input.pressed(KeyCode::I) {
+                    Some(Direction::Up)
+                } else if keyboard_input.pressed(KeyCode::K) {
+                    Some(Direction::Down)
+                } else {
+                    None
+                }
+            }
+            Id::Four => {
+                if keyboard_input.pressed(KeyCode::Numpad4) {
+                    Some(Direction::Left)
+                } else if keyboard_input.pressed(KeyCode::Numpad6) {
+                    Some(Direction::Right)
+                } else if keyboard_input.pressed(KeyCode::Numpad8) {
+                    Some(Direction::Up)
+                } else if keyboard_input.pressed(KeyCode::Numpad5) {
                     Some(Direction::Down)
                 } else {
                     None
