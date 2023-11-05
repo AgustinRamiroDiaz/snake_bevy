@@ -32,7 +32,7 @@ struct SnakePlugin;
 const SNAKE_TICK_SECONDS: f32 = 0.1;
 const SIZE: f32 = 30.0;
 const GAP: f32 = 4.0;
-const HALF_LEN: i32 = 15;
+const HALF_LEN: i32 = 7;
 const INMORTAL_TICKS: u8 = 10;
 const CHUNKS_LOST_PER_HIT: u8 = 3;
 const PADDING: f32 = 10.0;
@@ -210,17 +210,23 @@ fn update_local_coordinates_to_world_transforms(
 
 // TODO: we assume that Transform == SpriteBundle
 fn add_sprite_bundles(
-    mut query: Query<(Entity, &Coordinate, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
+    mut query: Query<(Entity, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
     mut commands: Commands,
 ) {
-    for (entity, coordinate, color) in query.iter_mut() {
+    for (entity, color) in query.iter_mut() {
         commands.entity(entity).insert(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
                 color: color.0,
                 ..Default::default()
             },
-            // transform: Transform::from_translation(Vec3::ZERO),
+
+            // TODO: find another way of hiding this
+            // The problem is that the SpriteBundle is added with a Transform, and just in the next frame it's updated to its corresponding Coordinate. So we've got a frame where the sprite is in the wrong place (middle of the screen)
+            // This is a quick patch to spawn the sprite in a place where it's not visible
+            transform: Transform::from_translation(
+                Vec3::ONE * BOARD_VIEWPORT_IN_WORLD_UNITS * 100.0,
+            ),
             ..Default::default()
         });
     }
