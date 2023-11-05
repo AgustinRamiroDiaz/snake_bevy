@@ -35,6 +35,9 @@ const GAP: f32 = 4.0;
 const HALF_LEN: i32 = 15;
 const INMORTAL_TICKS: u8 = 10;
 const CHUNKS_LOST_PER_HIT: u8 = 3;
+const PADDING: f32 = 10.0;
+const BOARD_VIEWPORT_IN_WORLD_UNITS: f32 =
+    SIZE + 2.0 * (SIZE + GAP) * HALF_LEN as f32 + 2.0 * PADDING;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
@@ -64,8 +67,6 @@ impl Plugin for SnakePlugin {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
-
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -133,6 +134,18 @@ fn setup(mut commands: Commands) {
     ));
 
     commands.spawn((MyColor(Color::RED), Apple, Coordinate::from((5.0, 5.0))));
+    commands.spawn(Camera2dBundle {
+        projection: OrthographicProjection {
+            far: 1000.,
+            near: -1000.,
+            scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
+                min_width: BOARD_VIEWPORT_IN_WORLD_UNITS,
+                min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
+            },
+            ..Default::default()
+        },
+        ..default()
+    });
 }
 
 #[derive(Component)]
