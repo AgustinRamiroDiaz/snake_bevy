@@ -54,6 +54,7 @@ impl Plugin for SnakePlugin {
                 toroid_coordinates,
                 eat_apple,
                 collision,
+                update_score,
             ),
         )
         .add_systems(
@@ -146,7 +147,29 @@ fn setup(mut commands: Commands) {
         },
         ..default()
     });
+
+    commands.spawn((
+        TextBundle::from_sections((0..2).map(|_| {
+            // TODO: remove hardcoded 0..2 to be able to scale game to more players
+            TextSection::new(
+                "Placeholder",
+                TextStyle {
+                    font_size: 60.0,
+                    color: Color::WHITE,
+                    ..default()
+                },
+            )
+        }))
+        .with_style(Style {
+            align_self: AlignSelf::FlexEnd,
+            ..default()
+        }),
+        Score,
+    ));
 }
+
+#[derive(Component)]
+struct Score;
 
 #[derive(Component)]
 struct Snake {
@@ -158,7 +181,7 @@ struct Snake {
     inmortal_ticks: u8,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 enum Id {
     One,
     Two,
@@ -384,6 +407,22 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
             snake.direction = direction;
             snake.input_blocked = true;
         }
+    }
+}
+
+fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, With<Score>>) {
+    let mut score = text.single_mut();
+
+    let mut snakes = Vec::from_iter(snakes.iter());
+    snakes.sort_by_key(|(snake, _)| -1 * snake.segments.len() as i8);
+
+    for (i, (snake, color)) in snakes.iter().enumerate() {
+        score.sections[i].value = format!(
+            "Player {:?}: {}\n",
+            snake.player_number,
+            snake.segments.len()
+        );
+        score.sections[i].style.color = color.0;
     }
 }
 
