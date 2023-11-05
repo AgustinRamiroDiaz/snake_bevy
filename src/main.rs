@@ -245,10 +245,9 @@ fn toroid_coordinates(
     }
 }
 
-// TODO: handle heads collisions
 fn collision(
     mut commands: Commands,
-    mut snake_query: Query<&mut Snake>,
+    mut snake_query: Query<(Entity, &mut Snake)>,
     query: Query<&Coordinate, With<SnakeSegment>>,
     changed_coordinates: Query<Entity, Changed<Coordinate>>,
 ) {
@@ -257,27 +256,41 @@ fn collision(
         return;
     }
 
-    let mut seen_coordinates = std::collections::HashSet::new();
+    let mut bodies_coordinates = std::collections::HashSet::new();
 
-    for snake in snake_query.iter() {
+    for (_, snake) in snake_query.iter() {
         snake
             .segments
             .iter()
             .skip(1)
             .flat_map(|&e| query.get(e))
             .for_each(|e| {
-                seen_coordinates.insert(e);
+                bodies_coordinates.insert(e);
             });
     }
 
-    for mut snake in snake_query
-        .iter_mut()
-        .filter(|snake| snake.inmortal_ticks == 0)
-    {
-        let &head = snake.segments.front().unwrap();
-        let head_coordinate = query.get(head).unwrap();
+    let get_head = |snake: &Snake| {
+        let &head = snake.segments.front()?;
+        query.get(head).ok()
+    };
 
-        if seen_coordinates.contains(head_coordinate) {
+    let snake_heads_coordinates = snake_query
+        .iter()
+        .flat_map(|(entity, snake)| Some((entity, get_head(snake)?)))
+        .collect::<Vec<_>>();
+
+    for (entity, mut snake) in snake_query
+        .iter_mut()
+        .filter(|(_, snake)| snake.inmortal_ticks == 0)
+    {
+        let head_coordinate = get_head(&snake).unwrap();
+
+        if bodies_coordinates.contains(head_coordinate)
+            || snake_heads_coordinates
+                .iter()
+                .filter(|(e, _)| *e != entity)
+                .any(|(_, c)| *c == head_coordinate)
+        {
             for _ in 0..CHUNKS_LOST_PER_HIT {
                 if snake.segments.len() == 1 {
                     break;
