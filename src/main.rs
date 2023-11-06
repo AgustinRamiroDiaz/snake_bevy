@@ -295,7 +295,7 @@ fn toroid_coordinates(
 fn collision(
     mut commands: Commands,
     mut snake_query: Query<(Entity, &mut Snake)>,
-    query: Query<&Coordinate, With<SnakeSegment>>,
+    query: Query<&Coordinate>,
     changed_coordinates: Query<Entity, Changed<Coordinate>>,
 ) {
     if changed_coordinates.iter().count() == 0 {
@@ -352,21 +352,21 @@ fn collision(
     }
 }
 
-// TODO: this could be more efficient by only checking the head. That would imply also changing the logic of where the apple spawns
 // TODO: decouple this logic into smaller units
 fn eat_apple(
     mut commands: Commands,
-    snake_segments: Query<&Coordinate, With<SnakeSegment>>,
     mut snakes: Query<(&mut Snake, &MyColor)>,
+    coordinates: Query<&Coordinate>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
 ) {
+    let get_head = |snake: &Snake| {
+        let &head = snake.segments.front()?;
+        coordinates.get(head).ok()
+    };
+
     for (mut snake, &color) in snakes.iter_mut() {
-        let segments = snake.segments.iter().flat_map(|&e| snake_segments.get(e));
-
-        let segments: HashSet<&Coordinate> = HashSet::from_iter(segments);
-
         for (apple, coord) in apples.iter() {
-            if segments.contains(&coord) {
+            if coord == get_head(&snake).unwrap() {
                 commands.entity(apple).despawn();
                 commands.spawn((
                     Apple,
