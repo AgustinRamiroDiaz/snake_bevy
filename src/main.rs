@@ -89,6 +89,7 @@ fn setup(mut commands: Commands) {
                 },
                 MyColor(Color::DARK_GRAY),
                 Coordinate(Vec2::new(x as f32, y as f32)),
+                Depth(-1.0),
             ));
         }
     }
@@ -241,12 +242,18 @@ fn tick(
 }
 
 fn update_local_coordinates_to_world_transforms(
-    mut query: Query<(&Coordinate, &mut Transform), Or<(Changed<Coordinate>, Changed<Transform>)>>,
+    mut query: Query<
+        (&Coordinate, &mut Transform, Option<&Depth>),
+        Or<(Changed<Coordinate>, Changed<Transform>)>,
+    >,
 ) {
-    for (coordinate, mut transform) in query.iter_mut() {
-        transform.translation = coordinate.0.extend(0.0) * (SIZE + GAP) // TODO: this logic is duplicated
+    for (coordinate, mut transform, depth) in query.iter_mut() {
+        transform.translation = coordinate.0.extend(depth.map_or(0.0, |x| x.0)) * (SIZE + GAP)
     }
 }
+
+#[derive(Component)]
+struct Depth(f32);
 
 // TODO: we assume that Transform == SpriteBundle
 fn add_sprite_bundles(
