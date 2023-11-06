@@ -121,25 +121,25 @@ fn setup(mut commands: Commands) {
     let snakes = [
         (
             Id::One,
-            Coordinate::from((-3.0, 0.0)),
+            Coordinate::from((-3.0, -3.0)),
             Direction::Right,
             MyColor(Color::LIME_GREEN),
         ),
         (
             Id::Two,
-            Coordinate::from((3.0, 0.0)),
+            Coordinate::from((3.0, 3.0)),
             Direction::Left,
             MyColor(Color::PINK),
         ),
         (
             Id::Three,
-            Coordinate::from((0.0, 3.0)),
+            Coordinate::from((-3.0, 3.0)),
             Direction::Down,
             MyColor(Color::SALMON),
         ),
         (
             Id::Four,
-            Coordinate::from((0.0, -3.0)),
+            Coordinate::from((3.0, -3.0)),
             Direction::Up,
             MyColor(Color::TURQUOISE),
         ),
