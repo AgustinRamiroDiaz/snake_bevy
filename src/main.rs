@@ -47,6 +47,7 @@ impl Plugin for SnakePlugin {
             SNAKE_TICK_SECONDS,
             TimerMode::Repeating,
         )))
+        .add_state::<AppState>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -57,14 +58,16 @@ impl Plugin for SnakePlugin {
                 eat_apple,
                 collision,
                 update_score,
-            ),
+            )
+                .run_if(in_state(AppState::InGame)),
         )
         .add_systems(
             PreUpdate,
             (
                 update_local_coordinates_to_world_transforms,
                 add_sprite_bundles,
-            ),
+            )
+                .run_if(in_state(AppState::InGame)),
         );
     }
 }
@@ -468,3 +471,10 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
 ///////////
 #[derive(Resource)]
 struct SnakeTimer(Timer);
+
+#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
+enum AppState {
+    MainMenu,
+    #[default]
+    InGame,
+}
