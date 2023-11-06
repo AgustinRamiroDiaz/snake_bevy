@@ -48,6 +48,7 @@ impl Plugin for SnakePlugin {
             TimerMode::Repeating,
         )))
         .add_state::<AppState>()
+        .add_systems(Update, menu_handler)
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -477,4 +478,23 @@ enum AppState {
     MainMenu,
     #[default]
     InGame,
+}
+
+fn menu_handler(
+    keyboard_input: Res<Input<KeyCode>>,
+    app_state: Res<State<AppState>>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+) {
+    match app_state.get() {
+        AppState::MainMenu => {
+            if keyboard_input.just_pressed(KeyCode::Space) {
+                app_state_next_state.set(AppState::InGame);
+            }
+        }
+        AppState::InGame => {
+            if keyboard_input.just_pressed(KeyCode::Escape) {
+                app_state_next_state.set(AppState::MainMenu);
+            }
+        }
+    }
 }
