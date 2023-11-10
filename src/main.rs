@@ -9,6 +9,12 @@ use coordinate::Coordinate;
 mod direction;
 use direction::Direction;
 
+mod main_menu;
+use main_menu::MainMenu;
+
+mod game_state;
+use game_state::{AppState, GameStatePlugin};
+
 fn main() {
     App::new()
         .add_plugins((
@@ -23,6 +29,8 @@ fn main() {
                 ..default()
             }),
             SnakePlugin,
+            MainMenu,
+            GameStatePlugin,
         ))
         .run();
 }
@@ -48,8 +56,6 @@ impl Plugin for SnakePlugin {
             TimerMode::Repeating,
         )))
         .insert_resource(NumberOfPlayers(MAX_NUMBER_OF_PLAYERS))
-        .add_state::<AppState>()
-        .add_systems(Update, menu_handler)
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -72,63 +78,8 @@ impl Plugin for SnakePlugin {
                 .run_if(in_state(AppState::InGame)),
         )
         .add_systems(OnExit(AppState::InGame), despawn_snakes)
-        .add_systems(OnEnter(AppState::InGame), spawn_snakes)
-        .add_systems(Update, button_system.run_if(in_state(AppState::MainMenu)))
-        .add_systems(OnEnter(AppState::MainMenu), spawn_buttons)
-        .add_systems(OnExit(AppState::MainMenu), despawn_buttons);
+        .add_systems(OnEnter(AppState::InGame), spawn_snakes);
     }
-}
-
-#[derive(Component)]
-struct NumberOfPlayersButton;
-
-fn button_system(mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>) {
-    for interaction in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                dbg!("Pressed");
-            }
-            Interaction::Hovered => {}
-            Interaction::None => {}
-        }
-    }
-}
-
-fn spawn_buttons(mut commands: Commands) {
-    commands
-        .spawn((
-            ButtonBundle {
-                style: Style {
-                    // width: Val::Px(150.0),
-                    // height: Val::Px(65.0),
-                    // border: UiRect::all(Val::Px(5.0)),
-                    // horizontally center child text
-                    justify_content: JustifyContent::Center,
-                    // vertically center child text
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                border_color: BorderColor(Color::BLACK),
-                ..default()
-            },
-            NumberOfPlayersButton,
-        ))
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                "Button",
-                TextStyle {
-                    font_size: 40.0,
-                    color: Color::rgb(0.9, 0.9, 0.9),
-                    ..default()
-                },
-            ));
-        });
-}
-
-fn despawn_buttons(mut commands: Commands, buttons: Query<Entity, With<NumberOfPlayersButton>>) {
-    buttons
-        .iter()
-        .for_each(|entity| commands.entity(entity).despawn_recursive());
 }
 
 fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayers>) {
@@ -551,29 +502,3 @@ struct NumberOfPlayers(usize);
 
 #[derive(Resource)]
 struct SnakeTimer(Timer);
-
-#[derive(States, PartialEq, Eq, Debug, Clone, Hash, Default)]
-enum AppState {
-    MainMenu,
-    #[default]
-    InGame,
-}
-
-fn menu_handler(
-    keyboard_input: Res<Input<KeyCode>>,
-    app_state: Res<State<AppState>>,
-    mut app_state_next_state: ResMut<NextState<AppState>>,
-) {
-    match app_state.get() {
-        AppState::MainMenu => {
-            if keyboard_input.just_pressed(KeyCode::Space) {
-                app_state_next_state.set(AppState::InGame);
-            }
-        }
-        AppState::InGame => {
-            if keyboard_input.just_pressed(KeyCode::Escape) {
-                app_state_next_state.set(AppState::MainMenu);
-            }
-        }
-    }
-}
