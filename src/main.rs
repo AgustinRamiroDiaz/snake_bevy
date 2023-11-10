@@ -39,7 +39,7 @@ const PADDING: f32 = 10.0;
 const BOARD_VIEWPORT_IN_WORLD_UNITS: f32 =
     SIZE + 2.0 * (SIZE + GAP) * HALF_LEN as f32 + 2.0 * PADDING;
 
-const NUMBER_OF_PLAYERS: usize = 4;
+const MAX_NUMBER_OF_PLAYERS: usize = 4;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
@@ -47,6 +47,7 @@ impl Plugin for SnakePlugin {
             SNAKE_TICK_SECONDS,
             TimerMode::Repeating,
         )))
+        .insert_resource(NumberOfPlayers(MAX_NUMBER_OF_PLAYERS))
         .add_state::<AppState>()
         .add_systems(Update, menu_handler)
         .add_systems(Startup, setup)
@@ -71,11 +72,66 @@ impl Plugin for SnakePlugin {
                 .run_if(in_state(AppState::InGame)),
         )
         .add_systems(OnExit(AppState::InGame), despawn_snakes)
-        .add_systems(OnEnter(AppState::InGame), spawn_snakes);
+        .add_systems(OnEnter(AppState::InGame), spawn_snakes)
+        .add_systems(Update, button_system.run_if(in_state(AppState::MainMenu)))
+        .add_systems(OnEnter(AppState::MainMenu), spawn_buttons)
+        .add_systems(OnExit(AppState::MainMenu), despawn_buttons);
     }
 }
 
-fn setup(mut commands: Commands) {
+#[derive(Component)]
+struct NumberOfPlayersButton;
+
+fn button_system(mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>) {
+    for interaction in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                dbg!("Pressed");
+            }
+            Interaction::Hovered => {}
+            Interaction::None => {}
+        }
+    }
+}
+
+fn spawn_buttons(mut commands: Commands) {
+    commands
+        .spawn((
+            ButtonBundle {
+                style: Style {
+                    // width: Val::Px(150.0),
+                    // height: Val::Px(65.0),
+                    // border: UiRect::all(Val::Px(5.0)),
+                    // horizontally center child text
+                    justify_content: JustifyContent::Center,
+                    // vertically center child text
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                border_color: BorderColor(Color::BLACK),
+                ..default()
+            },
+            NumberOfPlayersButton,
+        ))
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Button",
+                TextStyle {
+                    font_size: 40.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                    ..default()
+                },
+            ));
+        });
+}
+
+fn despawn_buttons(mut commands: Commands, buttons: Query<Entity, With<NumberOfPlayersButton>>) {
+    buttons
+        .iter()
+        .for_each(|entity| commands.entity(entity).despawn_recursive());
+}
+
+fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayers>) {
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -98,7 +154,7 @@ fn setup(mut commands: Commands) {
     commands.spawn_batch(grid);
 
     commands.spawn((
-        TextBundle::from_sections((0..NUMBER_OF_PLAYERS).map(|_| {
+        TextBundle::from_sections((0..number_of_players.0).map(|_| {
             TextSection::new(
                 "Placeholder",
                 TextStyle {
@@ -129,7 +185,7 @@ fn setup(mut commands: Commands) {
     });
 }
 
-fn spawn_snakes(mut commands: Commands) {
+fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayers>) {
     let mut spawn_snake = |id, spawn_coord: Coordinate, direction: Direction, color: MyColor| {
         let head_a = commands
             .spawn((color, SnakeSegment, spawn_coord.clone()))
@@ -182,7 +238,7 @@ fn spawn_snakes(mut commands: Commands) {
 
     snakes
         .into_iter()
-        .take(NUMBER_OF_PLAYERS)
+        .take(number_of_players.0)
         .map(|(id, coord, direction, color)| spawn_snake(id, coord, direction, color))
         .count();
 }
@@ -490,6 +546,9 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
 }
 
 ///////////
+#[derive(Resource)]
+struct NumberOfPlayers(usize);
+
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
