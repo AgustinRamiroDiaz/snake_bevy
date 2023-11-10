@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 
 use bevy::{prelude::*, window::WindowMode};
 use rand::Rng;
@@ -69,7 +69,9 @@ impl Plugin for SnakePlugin {
                 add_sprite_bundles,
             )
                 .run_if(in_state(AppState::InGame)),
-        );
+        )
+        .add_systems(OnExit(AppState::InGame), despawn_snakes)
+        .add_systems(OnEnter(AppState::InGame), spawn_snakes);
     }
 }
 
@@ -95,6 +97,39 @@ fn setup(mut commands: Commands) {
     }
     commands.spawn_batch(grid);
 
+    commands.spawn((
+        TextBundle::from_sections((0..NUMBER_OF_PLAYERS).map(|_| {
+            TextSection::new(
+                "Placeholder",
+                TextStyle {
+                    font_size: 60.0,
+                    color: Color::WHITE,
+                    ..default()
+                },
+            )
+        }))
+        .with_style(Style {
+            align_self: AlignSelf::FlexEnd,
+            ..default()
+        }),
+        Score,
+    ));
+    commands.spawn((MyColor(Color::RED), Apple, Coordinate::from((5.0, 5.0))));
+    commands.spawn(Camera2dBundle {
+        projection: OrthographicProjection {
+            far: 1000.,
+            near: -1000.,
+            scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
+                min_width: BOARD_VIEWPORT_IN_WORLD_UNITS,
+                min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
+            },
+            ..Default::default()
+        },
+        ..default()
+    });
+}
+
+fn spawn_snakes(mut commands: Commands) {
     let mut spawn_snake = |id, spawn_coord: Coordinate, direction: Direction, color: MyColor| {
         let head_a = commands
             .spawn((color, SnakeSegment, spawn_coord.clone()))
@@ -150,38 +185,16 @@ fn setup(mut commands: Commands) {
         .take(NUMBER_OF_PLAYERS)
         .map(|(id, coord, direction, color)| spawn_snake(id, coord, direction, color))
         .count();
+}
 
-    commands.spawn((MyColor(Color::RED), Apple, Coordinate::from((5.0, 5.0))));
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
-            far: 1000.,
-            near: -1000.,
-            scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
-                min_width: BOARD_VIEWPORT_IN_WORLD_UNITS,
-                min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
-            },
-            ..Default::default()
-        },
-        ..default()
+fn despawn_snakes(mut commands: Commands, snakes: Query<(Entity, &Snake)>) {
+    snakes.iter().for_each(|(entity, snake)| {
+        snake
+            .segments
+            .iter()
+            .for_each(|&entity| commands.entity(entity).despawn_recursive());
+        commands.entity(entity).despawn_recursive();
     });
-
-    commands.spawn((
-        TextBundle::from_sections((0..NUMBER_OF_PLAYERS).map(|_| {
-            TextSection::new(
-                "Placeholder",
-                TextStyle {
-                    font_size: 60.0,
-                    color: Color::WHITE,
-                    ..default()
-                },
-            )
-        }))
-        .with_style(Style {
-            align_self: AlignSelf::FlexEnd,
-            ..default()
-        }),
-        Score,
-    ));
 }
 
 #[derive(Component)]
