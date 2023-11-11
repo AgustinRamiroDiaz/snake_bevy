@@ -12,11 +12,11 @@ pub(crate) struct GameStatePlugin;
 impl Plugin for GameStatePlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<AppState>()
-            .add_systems(Update, menu_handler);
+            .add_systems(Update, game_state_transition);
     }
 }
 
-fn menu_handler(
+fn game_state_transition(
     keyboard_input: Res<Input<KeyCode>>,
     app_state: Res<State<AppState>>,
     mut app_state_next_state: ResMut<NextState<AppState>>,

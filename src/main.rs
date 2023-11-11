@@ -29,7 +29,9 @@ fn main() {
                 ..default()
             }),
             SnakePlugin,
-            MainMenu,
+            MainMenu {
+                max_number_of_players: MAX_NUMBER_OF_PLAYERS,
+            },
             GameStatePlugin,
         ))
         .run();
