@@ -26,7 +26,7 @@ struct MyButton;
 struct ButtonNumber(usize);
 
 #[derive(Resource)]
-struct NumberOfPlayersSelected(usize);
+pub struct NumberOfPlayersSelected(pub usize);
 
 const UNSELECTED_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 const SELECTED_COLOR: Color = Color::BLACK;

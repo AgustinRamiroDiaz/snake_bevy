@@ -11,6 +11,7 @@ use direction::Direction;
 
 mod main_menu;
 use main_menu::MainMenu;
+use main_menu::NumberOfPlayersSelected;
 
 mod game_state;
 use game_state::{AppState, GameStatePlugin};
@@ -57,7 +58,6 @@ impl Plugin for SnakePlugin {
             SNAKE_TICK_SECONDS,
             TimerMode::Repeating,
         )))
-        .insert_resource(NumberOfPlayers(MAX_NUMBER_OF_PLAYERS))
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -84,7 +84,7 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayers>) {
+fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>) {
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -138,7 +138,7 @@ fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayers>) {
     });
 }
 
-fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayers>) {
+fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>) {
     let mut spawn_snake = |id, spawn_coord: Coordinate, direction: Direction, color: MyColor| {
         let head_a = commands
             .spawn((color, SnakeSegment, spawn_coord.clone()))
@@ -375,6 +375,8 @@ fn collision(
 }
 
 // TODO: decouple this logic into smaller units
+// TODO: decouple spawning from eating
+// TODO: sometime the apple spawns inside a snake and it's not visible until the snake moves
 fn eat_apple(
     mut commands: Commands,
     mut snakes: Query<(&mut Snake, &MyColor)>,
@@ -499,8 +501,6 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
 }
 
 ///////////
-#[derive(Resource)]
-struct NumberOfPlayers(usize);
 
 #[derive(Resource)]
 struct SnakeTimer(Timer);
