@@ -10,7 +10,10 @@ impl Plugin for MainMenu {
     fn build(&self, app: &mut App) {
         app.insert_resource(MaxNumberOfPlayers(self.max_number_of_players))
             .insert_resource(NumberOfPlayersSelected(self.max_number_of_players))
-            .add_systems(Update, button_system.run_if(in_state(AppState::MainMenu)))
+            .add_systems(
+                Update,
+                (selection, border_updater).run_if(in_state(AppState::MainMenu)),
+            )
             .add_systems(OnEnter(AppState::MainMenu), spawn_buttons)
             .add_systems(OnExit(AppState::MainMenu), despawn_buttons);
     }
@@ -31,7 +34,7 @@ pub struct NumberOfPlayersSelected(pub usize);
 const UNSELECTED_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 const SELECTED_COLOR: Color = Color::BLACK;
 
-fn button_system(
+fn selection(
     mut interaction_query: Query<
         (&Interaction, &mut BorderColor, &ButtonNumber),
         (Changed<Interaction>, With<MyButton>),
@@ -49,6 +52,24 @@ fn button_system(
                 // TODO: this does not belong here
                 // border_color.0 = UNSELECTED_COLOR;
             }
+        }
+    }
+}
+
+fn border_updater(
+    mut buttons: Query<(&mut BorderColor, &ButtonNumber), With<MyButton>>,
+    changed_buttons: Query<(), Changed<MyButton>>,
+    number_of_players_selected: Res<NumberOfPlayersSelected>,
+) {
+    if !number_of_players_selected.is_changed() && !changed_buttons.is_empty() {
+        return;
+    }
+
+    for (mut border_color, button_number) in &mut buttons {
+        border_color.0 = if button_number.0 == number_of_players_selected.0 {
+            SELECTED_COLOR
+        } else {
+            UNSELECTED_COLOR
         }
     }
 }
