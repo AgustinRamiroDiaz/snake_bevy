@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::iter;
 
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
@@ -121,20 +122,11 @@ fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>
     commands.spawn_batch(grid);
 
     commands.spawn((
-        TextBundle::from_sections((0..number_of_players.0).map(|_| {
-            TextSection::new(
-                "Placeholder",
-                TextStyle {
-                    font_size: 60.0,
-                    color: Color::WHITE,
-                    ..default()
-                },
-            )
-        }))
-        .with_style(Style {
-            align_self: AlignSelf::FlexEnd,
-            ..default()
-        }),
+        TextBundle::from_sections((0..number_of_players.0).map(|_| TextSection::default()))
+            .with_style(Style {
+                align_self: AlignSelf::FlexEnd,
+                ..default()
+            }),
         Score,
     ));
     spawn_apple(&mut commands);
@@ -503,18 +495,26 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
 }
 
 fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, With<Score>>) {
-    let mut score = text.single_mut();
-
     let mut snakes = Vec::from_iter(snakes.iter());
     snakes.sort_by_key(|(snake, _)| -1 * snake.segments.len() as i8);
 
-    for (i, (snake, color)) in snakes.iter().enumerate() {
-        score.sections[i].value = format!(
+    text.single_mut()
+        .sections
+        .resize(snakes.len(), TextSection::default());
+
+    for (text_section, (snake, color)) in
+        iter::zip(text.single_mut().sections.iter_mut(), snakes.iter())
+    {
+        text_section.value = format!(
             "Player {:?}: {}\n",
             snake.player_number,
             snake.segments.len()
         );
-        score.sections[i].style.color = color.0;
+        text_section.style = TextStyle {
+            font_size: 60.0,
+            color: color.0,
+            ..default()
+        }
     }
 }
 
