@@ -36,22 +36,18 @@ const SELECTED_COLOR: Color = Color::BLACK;
 
 fn selection(
     mut interaction_query: Query<
-        (&Interaction, &mut BorderColor, &ButtonNumber),
+        (&Interaction, &ButtonNumber),
         (Changed<Interaction>, With<MyButton>),
     >,
     mut number_of_players_selected: ResMut<NumberOfPlayersSelected>,
 ) {
-    for (interaction, mut border_color, button_number) in &mut interaction_query {
+    for (interaction, button_number) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                border_color.0 = SELECTED_COLOR;
                 number_of_players_selected.0 = button_number.0;
             }
             Interaction::Hovered => {}
-            Interaction::None => {
-                // TODO: this does not belong here
-                // border_color.0 = UNSELECTED_COLOR;
-            }
+            Interaction::None => {}
         }
     }
 }
