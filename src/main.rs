@@ -123,7 +123,7 @@ fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>
         }),
         Score,
     ));
-    commands.spawn((MyColor(Color::RED), Apple, Coordinate::from((5.0, 5.0))));
+    spawn_apple(&mut commands);
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             far: 1000.,
@@ -392,14 +392,7 @@ fn eat_apple(
         for (apple, coord) in apples.iter() {
             if coord == get_head(&snake).unwrap() {
                 commands.entity(apple).despawn();
-                commands.spawn((
-                    Apple,
-                    MyColor(Color::RED),
-                    Coordinate(Vec2::new(
-                        rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
-                        rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
-                    )),
-                ));
+                spawn_apple(&mut commands);
 
                 let tail = commands
                     .spawn((color, SnakeSegment, snake.trail.clone()))
@@ -409,6 +402,17 @@ fn eat_apple(
             }
         }
     }
+}
+
+fn spawn_apple(commands: &mut Commands) {
+    commands.spawn((
+        Apple,
+        MyColor(Color::RED),
+        Coordinate(Vec2::new(
+            rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
+            rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
+        )),
+    ));
 }
 
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
