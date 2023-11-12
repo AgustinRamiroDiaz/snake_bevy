@@ -22,13 +22,9 @@ fn game_state_transition(
     mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
-        match app_state.get() {
-            AppState::MainMenu => {
-                app_state_next_state.set(AppState::InGame);
-            }
-            AppState::InGame => {
-                app_state_next_state.set(AppState::MainMenu);
-            }
-        }
+        app_state_next_state.set(match app_state.get() {
+            AppState::MainMenu => AppState::InGame,
+            AppState::InGame => AppState::MainMenu,
+        })
     }
 }
