@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, window::WindowMode};
+use bevy_egui::egui::RichText;
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use rand::Rng;
 
 mod coordinate;
@@ -34,8 +36,21 @@ fn main() {
                 max_number_of_players: MAX_NUMBER_OF_PLAYERS,
             },
             GameStatePlugin,
+            EguiPlugin,
         ))
+        .add_systems(Update, ui_example_system)
         .run();
+}
+
+fn ui_example_system(mut contexts: EguiContexts) {
+    egui::Window::new("How to play").show(contexts.ctx_mut(), |ui| {
+        ui.label("`Esc` escape key to open the menu");
+        ui.label("`Esc` escape key to get back into the game");
+        ui.label("`Arrow keys` to move player 1");
+        ui.label("`WASD` to move player 2");
+        ui.label("`IJKL` to move player 3");
+        ui.label("`Numpad 8456` to move player 4");
+    });
 }
 
 struct SnakePlugin;

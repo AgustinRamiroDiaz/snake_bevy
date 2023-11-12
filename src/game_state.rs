@@ -21,14 +21,12 @@ fn game_state_transition(
     app_state: Res<State<AppState>>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
-    match app_state.get() {
-        AppState::MainMenu => {
-            if keyboard_input.just_pressed(KeyCode::Space) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        match app_state.get() {
+            AppState::MainMenu => {
                 app_state_next_state.set(AppState::InGame);
             }
-        }
-        AppState::InGame => {
-            if keyboard_input.just_pressed(KeyCode::Escape) {
+            AppState::InGame => {
                 app_state_next_state.set(AppState::MainMenu);
             }
         }
