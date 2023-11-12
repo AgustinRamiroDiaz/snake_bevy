@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, window::WindowMode};
-use bevy_egui::egui::RichText;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use rand::Rng;
 
@@ -38,11 +37,10 @@ fn main() {
             GameStatePlugin,
             EguiPlugin,
         ))
-        .add_systems(Update, ui_example_system)
         .run();
 }
 
-fn ui_example_system(mut contexts: EguiContexts) {
+fn how_to_play(mut contexts: EguiContexts) {
     egui::Window::new("How to play").show(contexts.ctx_mut(), |ui| {
         ui.label("`Esc` escape key to open the menu");
         ui.label("`Esc` escape key to get back into the game");
@@ -95,7 +93,8 @@ impl Plugin for SnakePlugin {
                 .run_if(in_state(AppState::InGame)),
         )
         .add_systems(OnExit(AppState::InGame), despawn_snakes)
-        .add_systems(OnEnter(AppState::InGame), spawn_snakes);
+        .add_systems(OnEnter(AppState::InGame), spawn_snakes)
+        .add_systems(Update, how_to_play);
     }
 }
 
