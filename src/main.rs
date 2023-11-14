@@ -18,6 +18,9 @@ use main_menu::NumberOfPlayersSelected;
 mod game_state;
 use game_state::{AppState, GameStatePlugin};
 
+mod ai;
+use ai::AIPlugin;
+
 fn main() {
     App::new()
         .add_plugins((
@@ -40,6 +43,9 @@ fn main() {
             },
             GameStatePlugin,
             EguiPlugin,
+            // AIPlugin {
+            //     player_number: Id::One,
+            // },
         ))
         .run();
 }
@@ -232,7 +238,7 @@ struct Snake {
     inmortal_ticks: u8,
 }
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, PartialEq, Clone)]
 enum Id {
     One,
     Two,
