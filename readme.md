@@ -35,6 +35,7 @@ Do whatever you want with this code
 
 # Things I want to do next
 
+- [ ] Configurable keybindings
 - [ ] Add sprites for 
     - [ ] snake head
     - [ ] snake body
