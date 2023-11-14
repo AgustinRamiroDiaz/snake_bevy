@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std::iter;
 
-use bevy::math::vec3;
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use rand::Rng;
@@ -63,7 +62,7 @@ const SIZE: f32 = 30.0;
 const GAP: f32 = 4.0;
 const HALF_LEN: i32 = 7;
 const INMORTAL_TICKS: u8 = 10;
-const CHUNKS_LOST_PER_HIT: u8 = 3;
+const PROPORTION_LOST_PER_HIT: f32 = 0.3;
 const PADDING: f32 = 10.0;
 const BOARD_VIEWPORT_IN_WORLD_UNITS: f32 =
     SIZE + 2.0 * (SIZE + GAP) * HALF_LEN as f32 + 2.0 * PADDING;
@@ -86,7 +85,6 @@ impl Plugin for SnakePlugin {
                 eat_apple,
                 collision,
                 update_score,
-                load_apple_sprite,
             )
                 .run_if(in_state(AppState::InGame)),
         )
@@ -104,7 +102,11 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>) {
+fn setup(
+    mut commands: Commands,
+    number_of_players: Res<NumberOfPlayersSelected>,
+    asset_server: Res<AssetServer>,
+) {
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -134,7 +136,7 @@ fn setup(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>
             }),
         Score,
     ));
-    spawn_apple(&mut commands);
+    spawn_apple(&mut commands, &asset_server);
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             far: 1000.,
@@ -371,7 +373,7 @@ fn collision(
                 .filter(|(e, _)| *e != entity)
                 .any(|(_, c)| *c == head_coordinate)
         {
-            for _ in 0..CHUNKS_LOST_PER_HIT {
+            for _ in 0..(snake.segments.len() as f32 * PROPORTION_LOST_PER_HIT).ceil() as i8 {
                 if snake.segments.len() == 1 {
                     break;
                 }
@@ -393,6 +395,7 @@ fn eat_apple(
     mut snakes: Query<(&mut Snake, &MyColor)>,
     coordinates: Query<&Coordinate>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
+    asset_server: Res<AssetServer>,
 ) {
     let get_head = |snake: &Snake| {
         let &head = snake.segments.front()?;
@@ -403,7 +406,7 @@ fn eat_apple(
         for (apple, coord) in apples.iter() {
             if coord == get_head(&snake).unwrap() {
                 commands.entity(apple).despawn();
-                spawn_apple(&mut commands);
+                spawn_apple(&mut commands, &asset_server);
 
                 let tail = commands
                     .spawn((color, SnakeSegment, snake.trail.clone()))
@@ -415,7 +418,7 @@ fn eat_apple(
     }
 }
 
-fn spawn_apple(commands: &mut Commands) {
+fn spawn_apple(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     commands.spawn((
         Apple,
         Depth(1.0),
@@ -423,22 +426,11 @@ fn spawn_apple(commands: &mut Commands) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
+        SpriteBundle {
+            texture: asset_server.load("pumpkin.png"),
+            ..default()
+        },
     ));
-}
-
-fn load_apple_sprite(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    apples: Query<Entity, (With<Apple>, Without<Sprite>)>,
-) {
-    for apple in apples.iter() {
-        if let Some(mut apple) = commands.get_entity(apple) {
-            apple.insert(SpriteBundle {
-                texture: asset_server.load("pumpkin.png"),
-                ..default()
-            });
-        }
-    }
 }
 
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
