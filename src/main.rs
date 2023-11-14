@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use std::iter;
 
+use bevy::math::vec3;
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use rand::Rng;
@@ -21,16 +22,19 @@ use game_state::{AppState, GameStatePlugin};
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    #[cfg(not(target_arch = "wasm32"))] // Borderless looks distorted when running in the web
-                    mode: WindowMode::BorderlessFullscreen,
-                    fit_canvas_to_parent: true,
-                    resizable: true,
+            DefaultPlugins
+                .set(ImagePlugin::default_nearest())
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        // Borderless looks distorted when running in the web
+                        #[cfg(not(target_arch = "wasm32"))]
+                        mode: WindowMode::BorderlessFullscreen,
+                        fit_canvas_to_parent: true,
+                        resizable: true,
+                        ..default()
+                    }),
                     ..default()
                 }),
-                ..default()
-            }),
             SnakePlugin,
             MainMenu {
                 max_number_of_players: MAX_NUMBER_OF_PLAYERS,
