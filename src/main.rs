@@ -82,6 +82,7 @@ impl Plugin for SnakePlugin {
                 eat_apple,
                 collision,
                 update_score,
+                load_apple_sprite,
             )
                 .run_if(in_state(AppState::InGame)),
         )
@@ -413,12 +414,27 @@ fn eat_apple(
 fn spawn_apple(commands: &mut Commands) {
     commands.spawn((
         Apple,
-        MyColor(Color::RED),
+        Depth(1.0),
         Coordinate(Vec2::new(
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
     ));
+}
+
+fn load_apple_sprite(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    apples: Query<Entity, (With<Apple>, Without<Sprite>)>,
+) {
+    for apple in apples.iter() {
+        if let Some(mut apple) = commands.get_entity(apple) {
+            apple.insert(SpriteBundle {
+                texture: asset_server.load("pumpkin.png"),
+                ..default()
+            });
+        }
+    }
 }
 
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
