@@ -42,6 +42,7 @@ Do whatever you want with this code
     - [ ] apple
 
 - [ ] Add a win condition
+- [ ] Add some basic AI
 
 # Ideas
 
