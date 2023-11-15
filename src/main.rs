@@ -422,6 +422,7 @@ fn eat_apple(
                     .id();
 
                 snake.segments.push_back(tail);
+                return;
             }
         }
     }
