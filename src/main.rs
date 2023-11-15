@@ -1,3 +1,4 @@
+use core::panic;
 use std::collections::VecDeque;
 use std::iter;
 
@@ -21,33 +22,40 @@ use game_state::{AppState, GameStatePlugin};
 mod ai;
 use ai::AIPlugin;
 
+use std::env;
+
 fn main() {
-    App::new()
-        .add_plugins((
-            DefaultPlugins
-                .set(ImagePlugin::default_nearest())
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        // Borderless looks distorted when running in the web
-                        #[cfg(not(target_arch = "wasm32"))]
-                        mode: WindowMode::BorderlessFullscreen,
-                        fit_canvas_to_parent: true,
-                        resizable: true,
-                        ..default()
-                    }),
+    let mut app = App::new();
+
+    app.add_plugins((
+        DefaultPlugins
+            .set(ImagePlugin::default_nearest())
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    // Borderless looks distorted when running in the web
+                    #[cfg(not(target_arch = "wasm32"))]
+                    mode: WindowMode::BorderlessFullscreen,
+                    fit_canvas_to_parent: true,
+                    resizable: true,
                     ..default()
                 }),
-            SnakePlugin,
-            MainMenu {
-                max_number_of_players: MAX_NUMBER_OF_PLAYERS,
-            },
-            GameStatePlugin,
-            EguiPlugin,
-            // AIPlugin {
-            //     player_number: Id::One,
-            // },
-        ))
-        .run();
+                ..default()
+            }),
+        SnakePlugin,
+        MainMenu {
+            max_number_of_players: MAX_NUMBER_OF_PLAYERS,
+        },
+        GameStatePlugin,
+        EguiPlugin,
+    ));
+
+    if env::var("AI").unwrap_or("false".to_string()) == "true" {
+        app.add_plugins(AIPlugin {
+            player_number: Id(2),
+        });
+    }
+
+    app.run();
 }
 
 fn how_to_play(mut contexts: EguiContexts) {
@@ -183,25 +191,25 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
 
     let snakes = [
         (
-            Id::One,
+            Id(1),
             Coordinate::from((-3.0, -3.0)),
             Direction::Right,
             MyColor(Color::LIME_GREEN),
         ),
         (
-            Id::Two,
+            Id(2),
             Coordinate::from((3.0, 3.0)),
             Direction::Left,
             MyColor(Color::PINK),
         ),
         (
-            Id::Three,
+            Id(3),
             Coordinate::from((-3.0, 3.0)),
             Direction::Down,
             MyColor(Color::SALMON),
         ),
         (
-            Id::Four,
+            Id(4),
             Coordinate::from((3.0, -3.0)),
             Direction::Up,
             MyColor(Color::TURQUOISE),
@@ -239,12 +247,7 @@ struct Snake {
 }
 
 #[derive(Component, Debug, PartialEq, Clone)]
-enum Id {
-    One,
-    Two,
-    Three,
-    Four,
-}
+struct Id(u8);
 
 #[derive(Component)]
 struct SnakeSegment;
@@ -443,8 +446,8 @@ fn spawn_apple(commands: &mut Commands, asset_server: &Res<AssetServer>) {
 // TODO: with this logic I can go back by pressing two keys at once
 fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Snake>) {
     for mut snake in query.iter_mut().filter(|snake| !snake.input_blocked) {
-        let direction = match snake.player_number {
-            Id::One => {
+        let direction = match snake.player_number.0 {
+            1 => {
                 if keyboard_input.pressed(KeyCode::Left) {
                     Some(Direction::Left)
                 } else if keyboard_input.pressed(KeyCode::Right) {
@@ -457,7 +460,7 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
                     None
                 }
             }
-            Id::Two => {
+            2 => {
                 if keyboard_input.pressed(KeyCode::A) {
                     Some(Direction::Left)
                 } else if keyboard_input.pressed(KeyCode::D) {
@@ -470,7 +473,7 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
                     None
                 }
             }
-            Id::Three => {
+            3 => {
                 if keyboard_input.pressed(KeyCode::J) {
                     Some(Direction::Left)
                 } else if keyboard_input.pressed(KeyCode::L) {
@@ -483,7 +486,7 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
                     None
                 }
             }
-            Id::Four => {
+            4 => {
                 if keyboard_input.pressed(KeyCode::Numpad4) {
                     Some(Direction::Left)
                 } else if keyboard_input.pressed(KeyCode::Numpad6) {
@@ -496,6 +499,7 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
                     None
                 }
             }
+            other => panic!("Invalid player number {}, only 1-4 supported", other),
         };
 
         // You cannot go back into yourself
@@ -525,7 +529,7 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
     {
         text_section.value = format!(
             "Player {:?}: {}\n",
-            snake.player_number,
+            snake.player_number.0,
             snake.segments.len()
         );
         text_section.style = TextStyle {
