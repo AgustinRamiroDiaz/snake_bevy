@@ -7,23 +7,22 @@ use crate::Id;
 use crate::Snake;
 
 // TODO:
-// - make this toggable
 // - fix: this snake can go backwards into itself
 // - improve: this snake doesn't do the shortest path accounting for the toroid
 
 pub(crate) struct AIPlugin {
-    pub(crate) player_number: Id,
+    pub(crate) player_numbers: Vec<Id>,
 }
 
 impl Plugin for AIPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(PlayersToFollow(self.player_number.clone()))
+        app.insert_resource(PlayersToFollow(self.player_numbers.clone()))
             .add_systems(Update, go_to_apple);
     }
 }
 
 #[derive(Resource)]
-struct PlayersToFollow(Id);
+struct PlayersToFollow(Vec<Id>);
 
 fn go_to_apple(
     mut snakes: Query<&mut Snake>,
@@ -34,7 +33,7 @@ fn go_to_apple(
     if let Some((_, apple)) = apples.iter().next() {
         for mut snake in snakes
             .iter_mut()
-            .filter(|s| s.player_number == players_to_follow.0)
+            .filter(|s| players_to_follow.0.contains(&s.player_number))
         {
             // TODO: don't unwrap
             let snake_head = coordinates.get(*snake.segments.front().unwrap()).unwrap();

@@ -51,7 +51,7 @@ fn main() {
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
         app.add_plugins(AIPlugin {
-            player_number: Id(2),
+            player_numbers: vec![Id(1), Id(2), Id(3), Id(4)],
         });
     }
 
