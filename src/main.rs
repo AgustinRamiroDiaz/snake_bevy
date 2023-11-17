@@ -22,6 +22,9 @@ use game_state::{AppState, GameStatePlugin};
 mod ai;
 use ai::AIPlugin;
 
+mod asset_loader;
+use asset_loader::{AssetLoaderPlugin, SceneAssets};
+
 use std::env;
 
 fn main() {
@@ -47,6 +50,7 @@ fn main() {
         },
         GameStatePlugin,
         EguiPlugin,
+        AssetLoaderPlugin,
     ));
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
@@ -121,7 +125,7 @@ impl Plugin for SnakePlugin {
 fn setup(
     mut commands: Commands,
     number_of_players: Res<NumberOfPlayersSelected>,
-    asset_server: Res<AssetServer>,
+    assets: Res<SceneAssets>,
 ) {
     let mut grid = vec![];
 
@@ -152,7 +156,7 @@ fn setup(
             }),
         Score,
     ));
-    spawn_apple(&mut commands, &asset_server);
+    spawn_apple(&mut commands, &assets);
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             far: 1000.,
@@ -403,7 +407,7 @@ fn eat_apple(
     mut snakes: Query<(&mut Snake, &MyColor)>,
     coordinates: Query<&Coordinate>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
-    asset_server: Res<AssetServer>,
+    assets: Res<SceneAssets>,
 ) {
     let get_head = |snake: &Snake| {
         let &head = snake.segments.front()?;
@@ -414,7 +418,7 @@ fn eat_apple(
         for (apple, coord) in apples.iter() {
             if coord == get_head(&snake).unwrap() {
                 commands.entity(apple).despawn();
-                spawn_apple(&mut commands, &asset_server);
+                spawn_apple(&mut commands, &assets);
 
                 let tail = commands
                     .spawn((color, SnakeSegment, snake.trail.clone()))
@@ -427,7 +431,7 @@ fn eat_apple(
     }
 }
 
-fn spawn_apple(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
     commands.spawn((
         Apple,
         Depth(1.0),
@@ -436,7 +440,7 @@ fn spawn_apple(commands: &mut Commands, asset_server: &Res<AssetServer>) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
         SpriteBundle {
-            texture: asset_server.load("pumpkin.png"),
+            texture: assets.apple.clone(),
             transform: Transform::from_translation(Vec3::ONE * 1000.0), // This is done in order to not show the apple until the next frame. TODO: find a more "elegant" way of doing this
             ..default()
         },
