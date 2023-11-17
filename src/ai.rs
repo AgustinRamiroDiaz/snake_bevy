@@ -7,6 +7,8 @@ use crate::Id;
 use crate::ProposeDirection;
 use crate::Snake;
 
+use rand;
+
 // TODO:
 // - fix: this snake can go backwards into itself
 // - improve: this snake doesn't do the shortest path accounting for the toroid
@@ -40,23 +42,34 @@ fn go_to_apple(
             // TODO: don't unwrap
             let snake_head = coordinates.get(*snake.segments.front().unwrap()).unwrap();
 
-            let mut direction = Direction::Left;
-            if snake_head.0.x > apple.0.x {
-                direction = Direction::Left;
+            let direction_x = if snake_head.0.x > apple.0.x {
+                Some(Direction::Left)
             } else if snake_head.0.x < apple.0.x {
-                direction = Direction::Right;
-            }
+                Some(Direction::Right)
+            } else {
+                None
+            };
 
-            if snake_head.0.y > apple.0.y {
-                direction = Direction::Down;
+            let direction_y = if snake_head.0.y > apple.0.y {
+                Some(Direction::Down)
             } else if snake_head.0.y < apple.0.y {
-                direction = Direction::Up;
-            }
+                Some(Direction::Up)
+            } else {
+                None
+            };
 
-            propose_direction.send(ProposeDirection {
-                id: snake.player_number.clone(),
-                direction,
-            });
+            let direction = if rand::random() {
+                direction_x
+            } else {
+                direction_y
+            };
+
+            if let Some(direction) = direction {
+                propose_direction.send(ProposeDirection {
+                    id: snake.player_number.clone(),
+                    direction,
+                });
+            }
         }
     }
 }
