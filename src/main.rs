@@ -173,12 +173,9 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
             .spawn((color, SnakeSegment, spawn_coord.clone()))
             .id();
 
-        let mut segments = VecDeque::new();
-        segments.push_front(head_a);
-
         commands.spawn((
             Snake {
-                segments,
+                segments: VecDeque::from([head_a]),
                 player_number: id,
                 direction: direction.clone(),
                 trail: Coordinate(
