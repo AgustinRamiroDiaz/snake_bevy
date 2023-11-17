@@ -4,6 +4,7 @@ use crate::coordinate::Coordinate;
 use crate::Apple;
 use crate::Direction;
 use crate::Id;
+use crate::ProposeDirection;
 use crate::Snake;
 
 // TODO:
@@ -29,9 +30,10 @@ fn go_to_apple(
     players_to_follow: Res<PlayersToFollow>,
     apples: Query<(&Apple, &Coordinate)>,
     coordinates: Query<&Coordinate>,
+    mut propose_direction: EventWriter<ProposeDirection>,
 ) {
     if let Some((_, apple)) = apples.iter().next() {
-        for mut snake in snakes
+        for snake in snakes
             .iter_mut()
             .filter(|s| players_to_follow.0.contains(&s.player_number))
         {
@@ -51,7 +53,10 @@ fn go_to_apple(
                 direction = Direction::Up;
             }
 
-            snake.direction = direction;
+            propose_direction.send(ProposeDirection {
+                id: snake.player_number.clone(),
+                direction,
+            });
         }
     }
 }

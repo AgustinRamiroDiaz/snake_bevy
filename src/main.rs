@@ -89,6 +89,7 @@ impl Plugin for SnakePlugin {
             SNAKE_TICK_SECONDS,
             TimerMode::Repeating,
         )))
+        .add_event::<ProposeDirection>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -99,6 +100,7 @@ impl Plugin for SnakePlugin {
                 eat_apple,
                 collision,
                 update_score,
+                handle_snake_direction,
             )
                 .run_if(in_state(AppState::InGame)),
         )
@@ -444,9 +446,12 @@ fn spawn_apple(commands: &mut Commands, asset_server: &Res<AssetServer>) {
 }
 
 // Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
-// TODO: with this logic I can go back by pressing two keys at once
-fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Snake>) {
-    for mut snake in query.iter_mut().filter(|snake| !snake.input_blocked) {
+fn input_snake_direction(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<&mut Snake>,
+    mut propose_direction: EventWriter<ProposeDirection>,
+) {
+    for snake in query.iter_mut().filter(|snake| !snake.input_blocked) {
         let direction = match snake.player_number.0 {
             1 => {
                 if keyboard_input.pressed(KeyCode::Left) {
@@ -503,15 +508,33 @@ fn input_snake_direction(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&
             other => panic!("Invalid player number {}, only 1-4 supported", other),
         };
 
-        // You cannot go back into yourself
         if let Some(direction) = direction {
-            if snake.direction == !direction.clone() {
-                continue;
+            propose_direction.send(ProposeDirection {
+                id: snake.player_number.clone(),
+                direction,
+            });
+        }
+    }
+}
+
+// TODO: can we remove the `clone`s?
+fn handle_snake_direction(
+    mut snakes: Query<&mut Snake>,
+    mut proposed_direction: EventReader<ProposeDirection>,
+) {
+    for direction in proposed_direction.read() {
+        for mut snake in snakes
+            .iter_mut()
+            .filter(|snake| snake.player_number == direction.id)
+            .filter(|snake| !snake.input_blocked)
+        {
+            if snake.direction == !direction.direction.clone() {
+                return;
             }
-            if snake.direction == direction {
-                continue;
+            if snake.direction == direction.direction.clone() {
+                return;
             }
-            snake.direction = direction;
+            snake.direction = direction.direction.clone();
             snake.input_blocked = true;
         }
     }
@@ -539,6 +562,14 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
             ..default()
         }
     }
+}
+
+/// This event proposes a direction for the snake
+/// Then its up to the handler to decide if that direction is valid
+#[derive(Event)]
+struct ProposeDirection {
+    id: Id,
+    direction: Direction,
 }
 
 ///////////
