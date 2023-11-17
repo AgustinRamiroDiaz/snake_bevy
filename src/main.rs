@@ -440,6 +440,7 @@ fn spawn_apple(commands: &mut Commands, asset_server: &Res<AssetServer>) {
         )),
         SpriteBundle {
             texture: asset_server.load("pumpkin.png"),
+            transform: Transform::from_translation(Vec3::ONE * 1000.0), // This is done in order to not show the apple until the next frame. TODO: find a more "elegant" way of doing this
             ..default()
         },
     ));
