@@ -6,6 +6,7 @@ use crate::Direction;
 use crate::Id;
 use crate::ProposeDirection;
 use crate::Snake;
+use crate::HALF_LEN;
 
 use rand;
 
@@ -42,7 +43,7 @@ fn go_to_apple(
             // TODO: don't unwrap
             let snake_head = coordinates.get(*snake.segments.front().unwrap()).unwrap();
 
-            let direction_x = if snake_head.0.x > apple.0.x {
+            let mut direction_x = if snake_head.0.x > apple.0.x {
                 Some(Direction::Left)
             } else if snake_head.0.x < apple.0.x {
                 Some(Direction::Right)
@@ -50,13 +51,21 @@ fn go_to_apple(
                 None
             };
 
-            let direction_y = if snake_head.0.y > apple.0.y {
+            if (snake_head.0.x - apple.0.x).abs() > HALF_LEN as f32 {
+                direction_x = direction_x.map(|d| !d);
+            }
+
+            let mut direction_y = if snake_head.0.y > apple.0.y {
                 Some(Direction::Down)
             } else if snake_head.0.y < apple.0.y {
                 Some(Direction::Up)
             } else {
                 None
             };
+
+            if (snake_head.0.y - apple.0.y).abs() > HALF_LEN as f32 {
+                direction_y = direction_y.map(|d| !d);
+            }
 
             let direction = if rand::random() {
                 direction_x

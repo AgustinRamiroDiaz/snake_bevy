@@ -85,6 +85,7 @@ struct SnakePlugin;
 const SIZE: f32 = 30.0;
 const GAP: f32 = 4.0;
 const HALF_LEN: i32 = 7;
+const BOARD_LEN: i32 = 2 * HALF_LEN;
 const INMORTAL_TICKS: u8 = 10;
 const PROPORTION_LOST_PER_HIT: f32 = 0.3;
 const PADDING: f32 = 10.0;
