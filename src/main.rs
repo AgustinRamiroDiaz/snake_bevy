@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::iter;
 
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
@@ -28,6 +27,9 @@ use asset_loader::{AssetLoaderPlugin, SceneAssets};
 mod movement;
 use movement::SnakeMovementPlugin;
 
+mod score;
+use score::ScorePlugin;
+
 use std::env;
 
 fn main() {
@@ -55,6 +57,7 @@ fn main() {
         GameStatePlugin,
         EguiPlugin,
         AssetLoaderPlugin,
+        ScorePlugin,
     ));
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
@@ -95,8 +98,7 @@ impl Plugin for SnakePlugin {
         app.add_systems(Startup, setup)
             .add_systems(
                 Update,
-                (toroid_coordinates, eat_apple, collision, update_score)
-                    .run_if(in_state(AppState::InGame)),
+                (toroid_coordinates, eat_apple, collision).run_if(in_state(AppState::InGame)),
             )
             .add_systems(
                 PreUpdate,
@@ -112,11 +114,7 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn setup(
-    mut commands: Commands,
-    number_of_players: Res<NumberOfPlayersSelected>,
-    assets: Res<SceneAssets>,
-) {
+fn setup(mut commands: Commands, assets: Res<SceneAssets>) {
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -138,14 +136,6 @@ fn setup(
     }
     commands.spawn_batch(grid);
 
-    commands.spawn((
-        TextBundle::from_sections((0..number_of_players.0).map(|_| TextSection::default()))
-            .with_style(Style {
-                align_self: AlignSelf::FlexEnd,
-                ..default()
-            }),
-        Score,
-    ));
     spawn_apple(&mut commands, &assets);
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
@@ -225,9 +215,6 @@ fn despawn_snakes(mut commands: Commands, snakes: Query<(Entity, &Snake)>) {
         commands.entity(entity).despawn_recursive();
     });
 }
-
-#[derive(Component)]
-struct Score;
 
 #[derive(Component)]
 struct Snake {
@@ -408,28 +395,4 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
             ..default()
         },
     ));
-}
-
-fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, With<Score>>) {
-    let mut snakes = Vec::from_iter(snakes.iter());
-    snakes.sort_by_key(|(snake, _)| -1 * snake.segments.len() as i8);
-
-    text.single_mut()
-        .sections
-        .resize(snakes.len(), TextSection::default());
-
-    for (text_section, (snake, color)) in
-        iter::zip(text.single_mut().sections.iter_mut(), snakes.iter())
-    {
-        text_section.value = format!(
-            "Player {:?}: {}\n",
-            snake.player_number.0,
-            snake.segments.len()
-        );
-        text_section.style = TextStyle {
-            font_size: 60.0,
-            color: color.0,
-            ..default()
-        }
-    }
 }
