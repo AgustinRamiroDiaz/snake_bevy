@@ -4,6 +4,7 @@ use std::iter;
 
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use movement::ProposeDirection;
 use rand::Rng;
 
 mod coordinate;
@@ -25,6 +26,9 @@ use ai::AIPlugin;
 mod asset_loader;
 use asset_loader::{AssetLoaderPlugin, SceneAssets};
 
+mod movement;
+use movement::SnakeMovementPlugin;
+
 use std::env;
 
 fn main() {
@@ -45,6 +49,7 @@ fn main() {
                 ..default()
             }),
         SnakePlugin,
+        SnakeMovementPlugin,
         MainMenu {
             max_number_of_players: MAX_NUMBER_OF_PLAYERS,
         },
@@ -93,7 +98,6 @@ impl Plugin for SnakePlugin {
             SNAKE_TICK_SECONDS,
             TimerMode::Repeating,
         )))
-        .add_event::<ProposeDirection>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -104,7 +108,6 @@ impl Plugin for SnakePlugin {
                 eat_apple,
                 collision,
                 update_score,
-                handle_snake_direction,
             )
                 .run_if(in_state(AppState::InGame)),
         )
@@ -519,29 +522,6 @@ fn input_snake_direction(
     }
 }
 
-// TODO: can we remove the `clone`s?
-fn handle_snake_direction(
-    mut snakes: Query<&mut Snake>,
-    mut proposed_direction: EventReader<ProposeDirection>,
-) {
-    for direction in proposed_direction.read() {
-        for mut snake in snakes
-            .iter_mut()
-            .filter(|snake| snake.player_number == direction.id)
-            .filter(|snake| !snake.input_blocked)
-        {
-            if snake.direction == !direction.direction.clone() {
-                return;
-            }
-            if snake.direction == direction.direction.clone() {
-                return;
-            }
-            snake.direction = direction.direction.clone();
-            snake.input_blocked = true;
-        }
-    }
-}
-
 fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, With<Score>>) {
     let mut snakes = Vec::from_iter(snakes.iter());
     snakes.sort_by_key(|(snake, _)| -1 * snake.segments.len() as i8);
@@ -564,14 +544,6 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
             ..default()
         }
     }
-}
-
-/// This event proposes a direction for the snake
-/// Then its up to the handler to decide if that direction is valid
-#[derive(Event)]
-struct ProposeDirection {
-    id: Id,
-    direction: Direction,
 }
 
 ///////////
