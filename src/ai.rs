@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
+use crate::apple::Apple;
 use crate::coordinate::Coordinate;
-use crate::Apple;
 use crate::Direction;
 use crate::Id;
 use crate::ProposeDirection;

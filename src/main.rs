@@ -3,7 +3,6 @@ use std::collections::VecDeque;
 use bevy::{prelude::*, window::WindowMode};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use movement::ProposeDirection;
-use rand::Rng;
 
 mod coordinate;
 use coordinate::Coordinate;
@@ -29,9 +28,12 @@ use movement::SnakeMovementPlugin;
 
 mod score;
 use score::ScorePlugin;
-use win::WinPlugin;
 
 mod win;
+use win::WinPlugin;
+
+mod apple;
+use apple::ApplePlugin;
 
 use std::env;
 
@@ -62,6 +64,7 @@ fn main() {
         AssetLoaderPlugin,
         ScorePlugin,
         WinPlugin,
+        ApplePlugin,
     ));
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
@@ -102,7 +105,7 @@ impl Plugin for SnakePlugin {
         app.add_systems(Startup, setup)
             .add_systems(
                 Update,
-                (toroid_coordinates, eat_apple, collision).run_if(in_state(AppState::InGame)),
+                (toroid_coordinates, collision).run_if(in_state(AppState::InGame)),
             )
             .add_systems(
                 PreUpdate,
@@ -118,7 +121,7 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn setup(mut commands: Commands, assets: Res<SceneAssets>) {
+fn setup(mut commands: Commands) {
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -140,7 +143,6 @@ fn setup(mut commands: Commands, assets: Res<SceneAssets>) {
     }
     commands.spawn_batch(grid);
 
-    spawn_apple(&mut commands, &assets);
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             far: 1000.,
@@ -242,9 +244,6 @@ struct Id(u8);
 
 #[derive(Component)]
 struct SnakeSegment;
-
-#[derive(Component)]
-struct Apple;
 
 #[derive(Component, Clone, Copy)]
 struct MyColor(Color);
@@ -358,52 +357,4 @@ fn collision(
             snake.inmortal_ticks = INMORTAL_TICKS;
         }
     }
-}
-
-// TODO: decouple this logic into smaller units
-// TODO: decouple spawning from eating
-// TODO: sometime the apple spawns inside a snake and it's not visible until the snake moves
-fn eat_apple(
-    mut commands: Commands,
-    mut snakes: Query<(&mut Snake, &MyColor)>,
-    coordinates: Query<&Coordinate>,
-    apples: Query<(Entity, &Coordinate), With<Apple>>,
-    assets: Res<SceneAssets>,
-) {
-    let get_head = |snake: &Snake| {
-        let &head = snake.segments.front()?;
-        coordinates.get(head).ok()
-    };
-
-    for (mut snake, &color) in snakes.iter_mut() {
-        for (apple, coord) in apples.iter() {
-            if coord == get_head(&snake).unwrap() {
-                commands.entity(apple).despawn();
-                spawn_apple(&mut commands, &assets);
-
-                let tail = commands
-                    .spawn((color, SnakeSegment, snake.trail.clone()))
-                    .id();
-
-                snake.segments.push_back(tail);
-                return;
-            }
-        }
-    }
-}
-
-fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
-    commands.spawn((
-        Apple,
-        Depth(1.0),
-        Coordinate(Vec2::new(
-            rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
-            rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
-        )),
-        SpriteBundle {
-            texture: assets.apple.clone(),
-            transform: Transform::from_translation(Vec3::ONE * 1000.0), // This is done in order to not show the apple until the next frame. TODO: find a more "elegant" way of doing this
-            ..default()
-        },
-    ));
 }
