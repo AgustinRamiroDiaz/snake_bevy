@@ -29,6 +29,9 @@ use movement::SnakeMovementPlugin;
 
 mod score;
 use score::ScorePlugin;
+use win::WinPlugin;
+
+mod win;
 
 use std::env;
 
@@ -58,6 +61,7 @@ fn main() {
         EguiPlugin,
         AssetLoaderPlugin,
         ScorePlugin,
+        WinPlugin,
     ));
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
