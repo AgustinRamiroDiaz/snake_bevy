@@ -152,25 +152,27 @@ fn setup(mut commands: Commands, assets: Res<SceneAssets>) {
 }
 
 fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>) {
-    let mut spawn_snake = |id, spawn_coord: Coordinate, direction: Direction, color: MyColor| {
-        let head_a = commands
-            .spawn((color, SnakeSegment, spawn_coord.clone()))
-            .id();
+    let mut spawn_snake =
+        |id, spawn_coord: Coordinate, direction: Direction, color: MyColor, name: String| {
+            let head_a = commands
+                .spawn((color, SnakeSegment, spawn_coord.clone()))
+                .id();
 
-        commands.spawn((
-            Snake {
-                segments: VecDeque::from([head_a]),
-                player_number: id,
-                direction: direction.clone(),
-                trail: Coordinate(
-                    spawn_coord.0 - <direction::Direction as Into<Vec2>>::into(direction),
-                ),
-                input_blocked: false,
-                inmortal_ticks: 0,
-            },
-            color,
-        ));
-    };
+            commands.spawn((
+                Snake {
+                    segments: VecDeque::from([head_a]),
+                    player_number: id,
+                    direction: direction.clone(),
+                    trail: Coordinate(
+                        spawn_coord.0 - <direction::Direction as Into<Vec2>>::into(direction),
+                    ),
+                    input_blocked: false,
+                    inmortal_ticks: 0,
+                    name,
+                },
+                color,
+            ));
+        };
 
     let snakes = [
         (
@@ -178,31 +180,35 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
             Coordinate::from((-3.0, -3.0)),
             Direction::Right,
             MyColor(Color::LIME_GREEN),
+            "Ninja".to_string(),
         ),
         (
             Id(2),
             Coordinate::from((3.0, 3.0)),
             Direction::Left,
             MyColor(Color::PINK),
+            "Panther".to_string(),
         ),
         (
             Id(3),
             Coordinate::from((-3.0, 3.0)),
             Direction::Down,
             MyColor(Color::SALMON),
+            "Sushi".to_string(),
         ),
         (
             Id(4),
             Coordinate::from((3.0, -3.0)),
             Direction::Up,
             MyColor(Color::TURQUOISE),
+            "Sonic".to_string(),
         ),
     ];
 
     snakes
         .into_iter()
         .take(number_of_players.0)
-        .map(|(id, coord, direction, color)| spawn_snake(id, coord, direction, color))
+        .map(|(id, coord, direction, color, name)| spawn_snake(id, coord, direction, color, name))
         .count();
 }
 
@@ -218,6 +224,7 @@ fn despawn_snakes(mut commands: Commands, snakes: Query<(Entity, &Snake)>) {
 
 #[derive(Component)]
 struct Snake {
+    name: String,
     segments: VecDeque<Entity>,
     direction: Direction,
     player_number: Id,
