@@ -115,8 +115,14 @@ impl Plugin for SnakePlugin {
                 )
                     .run_if(in_state(AppState::InGame)),
             )
-            .add_systems(OnExit(AppState::InGame), despawn_snakes)
-            .add_systems(OnEnter(AppState::InGame), spawn_snakes)
+            .add_systems(
+                OnEnter(AppState::InGame),
+                (
+                    despawn_snakes,
+                    spawn_snakes,
+                    despawn_snakes.before(spawn_snakes),
+                ),
+            )
             .add_systems(Update, how_to_play);
     }
 }
