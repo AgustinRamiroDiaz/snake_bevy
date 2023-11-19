@@ -19,7 +19,7 @@ fn setup(mut commands: Commands, assets: Res<SceneAssets>) {
     spawn_apple(&mut commands, &assets);
 }
 
-fn spawn_apple(mut commands: &mut Commands, assets: &Res<SceneAssets>) {
+fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
     commands.spawn((
         Apple,
         Depth(1.0),

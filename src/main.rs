@@ -21,7 +21,7 @@ mod ai;
 use ai::AIPlugin;
 
 mod asset_loader;
-use asset_loader::{AssetLoaderPlugin, SceneAssets};
+use asset_loader::AssetLoaderPlugin;
 
 mod movement;
 use movement::SnakeMovementPlugin;
