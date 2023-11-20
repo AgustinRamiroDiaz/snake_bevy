@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::game_state::AppState;
 use crate::{MyColor, Snake};
 
-const LENGTH_TO_WIN: usize = 10;
+const LENGTH_TO_WIN: usize = 1;
 const HOLD_TIME_TO_WIN: f32 = 10.0;
 
 pub(crate) struct WinPlugin;
@@ -83,7 +83,7 @@ fn setup(mut commands: Commands) {
         TextBundle::from_section(
             "",
             TextStyle {
-                font_size: 100.0,
+                font_size: 60.0,
                 ..default()
             },
         ) // Set the alignment of the Text
@@ -107,7 +107,7 @@ fn update_timer_text(
     if let Some((name, color)) = &current_winner.0 {
         for (mut text, _) in query.iter_mut() {
             text.sections[0].value = format!(
-                "Player {} is about to win in {:.2}!",
+                "🏆 {} in {:.2} ⏱️",
                 name,
                 timer.0.duration().as_secs_f32() - timer.0.elapsed_secs()
             );

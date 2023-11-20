@@ -89,14 +89,13 @@ fn how_to_play(mut contexts: EguiContexts) {
 
 struct SnakePlugin;
 
-const SIZE: f32 = 30.0;
-const GAP: f32 = 4.0;
+const SIZE: f32 = 0.8;
 const HALF_LEN: i32 = 7;
 const BOARD_LEN: i32 = 2 * HALF_LEN;
 const INMORTAL_TICKS: u8 = 10;
 const PROPORTION_LOST_PER_HIT: f32 = 0.3;
-const PADDING: f32 = 10.0;
-const BOARD_VIEWPORT_IN_WORLD_UNITS: f32 = SIZE + (SIZE + GAP) * BOARD_LEN as f32 + 2.0 * PADDING;
+const PADDING: f32 = 1.0;
+const BOARD_VIEWPORT_IN_WORLD_UNITS: f32 = BOARD_LEN as f32 + 2.0 * PADDING;
 
 const MAX_NUMBER_OF_PLAYERS: usize = 4;
 
@@ -141,7 +140,6 @@ fn setup(mut commands: Commands) {
                     },
                     ..Default::default()
                 },
-                MyColor(Color::DARK_GRAY),
                 Coordinate(Vec2::new(x as f32, y as f32)),
                 Depth(-1.0),
             ));
@@ -261,7 +259,7 @@ fn update_local_coordinates_to_world_transforms(
     >,
 ) {
     for (coordinate, mut transform, depth) in query.iter_mut() {
-        transform.translation = coordinate.0.extend(depth.map_or(0.0, |x| x.0)) * (SIZE + GAP)
+        transform.translation = coordinate.0.extend(depth.map_or(0.0, |x| x.0))
     }
 }
 

@@ -3,7 +3,7 @@ use rand::Rng;
 
 use crate::{
     asset_loader::SceneAssets, coordinate::Coordinate, game_state::AppState, Depth, MyColor, Snake,
-    SnakeSegment, HALF_LEN,
+    SnakeSegment, HALF_LEN, SIZE,
 };
 
 pub(crate) struct ApplePlugin;
@@ -28,6 +28,10 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
         SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                ..Default::default()
+            },
             texture: assets.apple.clone(),
             transform: Transform::from_translation(Vec3::ONE * 1000.0), // This is done in order to not show the apple until the next frame. TODO: find a more "elegant" way of doing this
             ..default()

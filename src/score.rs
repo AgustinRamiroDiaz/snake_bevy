@@ -39,7 +39,7 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
     for (text_section, (snake, color)) in
         iter::zip(text.single_mut().sections.iter_mut(), snakes.iter())
     {
-        text_section.value = format!("{:?}: {}\n", snake.name, snake.segments.len());
+        text_section.value = format!("{} {}\n", snake.segments.len(), snake.name);
         text_section.style = TextStyle {
             font_size: 60.0,
             color: color.0,
