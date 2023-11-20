@@ -107,7 +107,7 @@ fn update_timer_text(
     if let Some((name, color)) = &current_winner.0 {
         for (mut text, _) in query.iter_mut() {
             text.sections[0].value = format!(
-                "🏆 {} in {:.2} ⏱️",
+                "{} wins in {:.2}",
                 name,
                 timer.0.duration().as_secs_f32() - timer.0.elapsed_secs()
             );
