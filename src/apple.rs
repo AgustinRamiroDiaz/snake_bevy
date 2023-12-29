@@ -32,6 +32,8 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
         SpriteBundle {
+            // TODO: remove the need to specify size here
+            // This should be handled by `add_sprite_bundles`
             sprite: Sprite {
                 custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
                 ..Default::default()
