@@ -9,11 +9,17 @@ use super::movement::Tick;
 
 pub(crate) struct CollisionPlugin;
 
+const BLINK_DURATION: f32 = 0.1;
+
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Collision>()
             .add_event::<RemoveChunks>()
             .add_event::<SetInmortal>()
+            .insert_resource(BlinkTimer(Timer::from_seconds(
+                BLINK_DURATION,
+                TimerMode::Repeating,
+            )))
             .add_systems(
                 Update,
                 (
@@ -22,6 +28,7 @@ impl Plugin for CollisionPlugin {
                     remove_chunks,
                     set_inmortal,
                     update_inmortal_ticks,
+                    blink_tick,
                 )
                     .run_if(in_state(AppState::InGame)),
             );
@@ -132,6 +139,7 @@ fn set_inmortal(
     for &SetInmortal(entity) in event_reader.read() {
         if let Ok(mut snake) = query.get_mut(entity) {
             snake.inmortal_ticks = INMORTAL_TICKS;
+            // TODO: how can we decouple the blinking from the inmortality?
             for &segment in snake.segments.iter() {
                 commands.entity(segment).insert(Blinking);
             }
@@ -139,13 +147,39 @@ fn set_inmortal(
     }
 }
 
-fn update_inmortal_ticks(mut query: Query<&mut Snake>, mut tick: EventReader<Tick>) {
+fn update_inmortal_ticks(
+    mut commands: Commands,
+    mut query: Query<&mut Snake>,
+    mut tick: EventReader<Tick>,
+) {
     for _ in tick.read() {
         for mut snake in query.iter_mut() {
             snake.inmortal_ticks = snake.inmortal_ticks.saturating_sub(1);
+
+            if snake.inmortal_ticks == 0 {
+                for &segment in snake.segments.iter() {
+                    commands.entity(segment).remove::<Blinking>();
+                }
+            }
         }
     }
 }
 
 #[derive(Component)]
 struct Blinking;
+
+#[derive(Resource)]
+struct BlinkTimer(Timer);
+
+fn blink_tick(
+    time: Res<Time>,
+    mut timer: ResMut<BlinkTimer>,
+    mut blinking: Query<&mut Sprite, With<Blinking>>,
+) {
+    if timer.0.tick(time.delta()).just_finished() {
+        for mut sprite in blinking.iter_mut() {
+            let current_alpha = sprite.color.a();
+            sprite.color.set_a(1.0 - current_alpha);
+        }
+    }
+}
