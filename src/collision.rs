@@ -9,7 +9,13 @@ pub(crate) struct CollisionPlugin;
 
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (collision).run_if(in_state(AppState::InGame)));
+        app.add_event::<Collision>()
+            .add_event::<RemoveChunks>()
+            .add_systems(
+                Update,
+                (collision_detection, collision_handling, remove_chunks)
+                    .run_if(in_state(AppState::InGame)),
+            );
     }
 }
 
@@ -17,15 +23,18 @@ const INMORTAL_TICKS: u8 = 10;
 const PROPORTION_LOST_PER_HIT: f32 = 0.3;
 
 #[derive(Event)]
+/// Represents the snake entity that has hit its head against something
 struct Collision(Entity);
 
-fn collision(
+fn collision_detection(
     mut commands: Commands,
     mut snake_query: Query<(Entity, &mut Snake)>,
     query: Query<&Coordinate>,
     changed_coordinates: Query<Entity, Changed<Coordinate>>,
+    mut collision: EventWriter<Collision>,
 ) {
     if changed_coordinates.iter().count() == 0 {
+        // This is an efficiency hack to just evaluate collisions when the state has changed
         // TODO: find a better way to do this
         return;
     }
@@ -65,6 +74,30 @@ fn collision(
                 .filter(|(e, _)| *e != entity)
                 .any(|(_, c)| *c == head_coordinate)
         {
+            collision.send(Collision(entity));
+        }
+    }
+}
+
+fn collision_handling(
+    mut collision: EventReader<Collision>,
+    mut remove_chunks: EventWriter<RemoveChunks>,
+) {
+    for Collision(entity) in collision.read() {
+        remove_chunks.send(RemoveChunks(*entity));
+    }
+}
+
+#[derive(Event)]
+struct RemoveChunks(Entity);
+
+fn remove_chunks(
+    mut commands: Commands,
+    mut event_reader: EventReader<RemoveChunks>,
+    mut query: Query<(Entity, &mut Snake)>,
+) {
+    for RemoveChunks(entity) in event_reader.read() {
+        if let Ok((_, mut snake)) = query.get_mut(*entity) {
             for _ in 0..(snake.segments.len() as f32 * PROPORTION_LOST_PER_HIT).ceil() as i8 {
                 if snake.segments.len() == 1 {
                     break;
