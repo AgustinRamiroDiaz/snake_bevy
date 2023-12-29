@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, window::WindowMode};
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use movement::ProposeDirection;
 
 mod coordinate;
@@ -39,7 +38,10 @@ mod collision;
 use collision::CollisionPlugin;
 
 mod blink;
-use blink::BlinkPlugin;
+
+mod schedule;
+use schedule::InGameSet;
+use schedule::SchedulePlugin;
 
 use std::env;
 
@@ -66,13 +68,12 @@ fn main() {
             max_number_of_players: MAX_NUMBER_OF_PLAYERS,
         },
         GameStatePlugin,
-        EguiPlugin,
         AssetLoaderPlugin,
         ScorePlugin,
         WinPlugin,
         ApplePlugin,
         CollisionPlugin,
-        BlinkPlugin,
+        SchedulePlugin,
     ));
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
@@ -82,17 +83,6 @@ fn main() {
     }
 
     app.run();
-}
-
-fn how_to_play(mut contexts: EguiContexts) {
-    egui::Window::new("How to play").show(contexts.ctx_mut(), |ui| {
-        ui.label("`Esc` escape key to open the menu");
-        ui.label("`Esc` escape key to get back into the game");
-        ui.label("`Arrow keys` to move player 1");
-        ui.label("`WASD` to move player 2");
-        ui.label("`IJKL` to move player 3");
-        ui.label("`Numpad 8456` to move player 4");
-    });
 }
 
 struct SnakePlugin;
@@ -110,25 +100,20 @@ impl Plugin for SnakePlugin {
         app.add_systems(Startup, setup)
             .add_systems(
                 Update,
-                (toroid_coordinates).run_if(in_state(AppState::InGame)),
-            )
-            .add_systems(
-                PreUpdate,
                 (
+                    toroid_coordinates,
                     update_local_coordinates_to_world_transforms,
+                    apply_deferred,
                     add_sprite_bundles,
                 )
+                    .chain()
+                    .in_set(InGameSet::Last)
                     .run_if(in_state(AppState::InGame)),
             )
             .add_systems(
                 OnEnter(AppState::InGame),
-                (
-                    despawn_snakes,
-                    spawn_snakes,
-                    despawn_snakes.before(spawn_snakes),
-                ),
-            )
-            .add_systems(Update, how_to_play);
+                (despawn_snakes, spawn_snakes).chain(),
+            );
     }
 }
 

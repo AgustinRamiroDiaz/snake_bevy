@@ -1,17 +1,21 @@
 use bevy::prelude::*;
 use rand::Rng;
 
-use crate::{
-    asset_loader::SceneAssets, coordinate::Coordinate, game_state::AppState, Depth, MyColor, Snake,
-    SnakeSegment, HALF_LEN, SIZE,
+use super::{
+    asset_loader::SceneAssets, coordinate::Coordinate, game_state::AppState, schedule::InGameSet,
+    Depth, MyColor, Snake, SnakeSegment, HALF_LEN, SIZE,
 };
 
 pub(crate) struct ApplePlugin;
 
 impl Plugin for ApplePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
-            .add_systems(Update, eat_apple.run_if(in_state(AppState::InGame)));
+        app.add_systems(Startup, setup).add_systems(
+            Update,
+            eat_apple
+                .in_set(InGameSet::SpawnDespawnEntities)
+                .run_if(in_state(AppState::InGame)),
+        );
     }
 }
 
@@ -33,7 +37,6 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
                 ..Default::default()
             },
             texture: assets.apple.clone(),
-            transform: Transform::from_translation(Vec3::ONE * 1000.0), // This is done in order to not show the apple until the next frame. TODO: find a more "elegant" way of doing this
             ..default()
         },
     ));
@@ -44,7 +47,6 @@ pub(crate) struct Apple;
 
 // TODO: decouple this logic into smaller units
 // TODO: decouple spawning from eating
-// TODO: sometime the apple spawns inside a snake and it's not visible until the snake moves
 fn eat_apple(
     mut commands: Commands,
     mut snakes: Query<(&mut Snake, &MyColor)>,

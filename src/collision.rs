@@ -5,14 +5,15 @@ use super::coordinate::Coordinate;
 use super::game_state::AppState;
 use super::Snake;
 
-use super::blink::Blinking;
+use super::blink::{BlinkPlugin, Blinking};
 use super::movement::Tick;
 
 pub(crate) struct CollisionPlugin;
 
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<Collision>()
+        app.add_plugins(BlinkPlugin)
+            .add_event::<Collision>()
             .add_event::<RemoveChunks>()
             .add_event::<SetInmortal>()
             .add_systems(
