@@ -27,7 +27,6 @@ const PROPORTION_LOST_PER_HIT: f32 = 0.3;
 struct Collision(Entity);
 
 fn collision_detection(
-    mut commands: Commands,
     mut snake_query: Query<(Entity, &mut Snake)>,
     query: Query<&Coordinate>,
     changed_coordinates: Query<Entity, Changed<Coordinate>>,
@@ -62,7 +61,7 @@ fn collision_detection(
         .flat_map(|(entity, snake)| Some((entity, get_head(snake)?)))
         .collect::<Vec<_>>();
 
-    for (entity, mut snake) in snake_query
+    for (entity, snake) in snake_query
         .iter_mut()
         .filter(|(_, snake)| snake.inmortal_ticks == 0)
     {
