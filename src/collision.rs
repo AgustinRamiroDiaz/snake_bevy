@@ -5,21 +5,16 @@ use super::coordinate::Coordinate;
 use super::game_state::AppState;
 use super::Snake;
 
+use super::blink::Blinking;
 use super::movement::Tick;
 
 pub(crate) struct CollisionPlugin;
-
-const BLINK_DURATION: f32 = 0.1;
 
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Collision>()
             .add_event::<RemoveChunks>()
             .add_event::<SetInmortal>()
-            .insert_resource(BlinkTimer(Timer::from_seconds(
-                BLINK_DURATION,
-                TimerMode::Repeating,
-            )))
             .add_systems(
                 Update,
                 (
@@ -28,7 +23,6 @@ impl Plugin for CollisionPlugin {
                     remove_chunks,
                     set_inmortal,
                     update_inmortal_ticks,
-                    blink_tick,
                 )
                     .run_if(in_state(AppState::InGame)),
             );
@@ -161,25 +155,6 @@ fn update_inmortal_ticks(
                     commands.entity(segment).remove::<Blinking>();
                 }
             }
-        }
-    }
-}
-
-#[derive(Component)]
-struct Blinking;
-
-#[derive(Resource)]
-struct BlinkTimer(Timer);
-
-fn blink_tick(
-    time: Res<Time>,
-    mut timer: ResMut<BlinkTimer>,
-    mut blinking: Query<&mut Sprite, With<Blinking>>,
-) {
-    if timer.0.tick(time.delta()).just_finished() {
-        for mut sprite in blinking.iter_mut() {
-            let current_alpha = sprite.color.a();
-            sprite.color.set_a(1.0 - current_alpha);
         }
     }
 }

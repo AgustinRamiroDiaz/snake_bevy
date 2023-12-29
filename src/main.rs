@@ -38,6 +38,9 @@ use apple::ApplePlugin;
 mod collision;
 use collision::CollisionPlugin;
 
+mod blink;
+use blink::BlinkPlugin;
+
 use std::env;
 
 fn main() {
@@ -69,6 +72,7 @@ fn main() {
         WinPlugin,
         ApplePlugin,
         CollisionPlugin,
+        BlinkPlugin,
     ));
 
     if env::var("AI").unwrap_or("false".to_string()) == "true" {
