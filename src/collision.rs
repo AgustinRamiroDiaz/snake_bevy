@@ -5,6 +5,8 @@ use super::coordinate::Coordinate;
 use super::game_state::AppState;
 use super::Snake;
 
+use super::movement::Tick;
+
 pub(crate) struct CollisionPlugin;
 
 impl Plugin for CollisionPlugin {
@@ -19,6 +21,7 @@ impl Plugin for CollisionPlugin {
                     collision_handling,
                     remove_chunks,
                     set_inmortal,
+                    update_inmortal_ticks,
                 )
                     .run_if(in_state(AppState::InGame)),
             );
@@ -121,10 +124,28 @@ fn remove_chunks(
 #[derive(Event)]
 struct SetInmortal(Entity);
 
-fn set_inmortal(mut event_reader: EventReader<SetInmortal>, mut query: Query<&mut Snake>) {
-    for SetInmortal(entity) in event_reader.read() {
-        if let Ok(mut snake) = query.get_mut(*entity) {
+fn set_inmortal(
+    mut commands: Commands,
+    mut event_reader: EventReader<SetInmortal>,
+    mut query: Query<&mut Snake>,
+) {
+    for &SetInmortal(entity) in event_reader.read() {
+        if let Ok(mut snake) = query.get_mut(entity) {
             snake.inmortal_ticks = INMORTAL_TICKS;
+            for &segment in snake.segments.iter() {
+                commands.entity(segment).insert(Blinking);
+            }
         }
     }
 }
+
+fn update_inmortal_ticks(mut query: Query<&mut Snake>, mut tick: EventReader<Tick>) {
+    for _ in tick.read() {
+        for mut snake in query.iter_mut() {
+            snake.inmortal_ticks = snake.inmortal_ticks.saturating_sub(1);
+        }
+    }
+}
+
+#[derive(Component)]
+struct Blinking;

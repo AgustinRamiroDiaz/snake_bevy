@@ -13,6 +13,7 @@ impl Plugin for SnakeMovementPlugin {
             TimerMode::Repeating,
         )))
         .add_event::<ProposeDirection>()
+        .add_event::<Tick>()
         .add_systems(
             Update,
             (tick, input_snake_direction, handle_snake_direction)
@@ -24,16 +25,20 @@ impl Plugin for SnakeMovementPlugin {
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
+#[derive(Event)]
+pub(crate) struct Tick;
+
 fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
     mut query: Query<&mut Snake>,
     mut entity_query: Query<&mut Coordinate>,
+    mut tick: EventWriter<Tick>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
+        tick.send(Tick);
         for mut snake in query.iter_mut() {
             snake.input_blocked = false;
-            snake.inmortal_ticks = snake.inmortal_ticks.saturating_sub(1);
             // TODO: don't unwrap
             let &tail_entity = snake.segments.back().unwrap();
             let &head_entity = snake.segments.front().unwrap();
