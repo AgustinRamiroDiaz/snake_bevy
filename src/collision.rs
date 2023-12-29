@@ -11,9 +11,15 @@ impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Collision>()
             .add_event::<RemoveChunks>()
+            .add_event::<SetInmortal>()
             .add_systems(
                 Update,
-                (collision_detection, collision_handling, remove_chunks)
+                (
+                    collision_detection,
+                    collision_handling,
+                    remove_chunks,
+                    set_inmortal,
+                )
                     .run_if(in_state(AppState::InGame)),
             );
     }
@@ -81,9 +87,11 @@ fn collision_detection(
 fn collision_handling(
     mut collision: EventReader<Collision>,
     mut remove_chunks: EventWriter<RemoveChunks>,
+    mut set_inmortal: EventWriter<SetInmortal>,
 ) {
-    for Collision(entity) in collision.read() {
-        remove_chunks.send(RemoveChunks(*entity));
+    for &Collision(entity) in collision.read() {
+        remove_chunks.send(RemoveChunks(entity));
+        set_inmortal.send(SetInmortal(entity));
     }
 }
 
@@ -106,6 +114,16 @@ fn remove_chunks(
                     commands.entity(entity).despawn_recursive();
                 }
             }
+        }
+    }
+}
+
+#[derive(Event)]
+struct SetInmortal(Entity);
+
+fn set_inmortal(mut event_reader: EventReader<SetInmortal>, mut query: Query<&mut Snake>) {
+    for SetInmortal(entity) in event_reader.read() {
+        if let Ok(mut snake) = query.get_mut(*entity) {
             snake.inmortal_ticks = INMORTAL_TICKS;
         }
     }
