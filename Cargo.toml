@@ -18,3 +18,9 @@ opt-level = 1
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
+
+# Optimizations taken from https://bevy-cheatbook.github.io/platforms/wasm/size-opt.html
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
