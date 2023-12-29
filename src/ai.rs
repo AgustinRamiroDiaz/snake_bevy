@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use rand::distributions::WeightedIndex;
+use rand::prelude::*;
 
 use crate::apple::Apple;
 use crate::coordinate::Coordinate;
@@ -65,15 +67,16 @@ fn go_to_apple(
 
             if (snake_head.0.y - apple.0.y).abs() > HALF_LEN as f32 {
                 direction_y = direction_y.map(|d| !d);
-            }
-
-            let direction = if rand::random() {
-                direction_x
-            } else {
-                direction_y
             };
 
-            if let Some(direction) = direction {
+            // Randomize decision so all snakes don't do the same
+            let weights = [1, 1, 20];
+            let choices = [direction_x, direction_y, None];
+            let direction = &choices[WeightedIndex::new(weights)
+                .unwrap()
+                .sample(&mut rand::thread_rng())];
+
+            if let Some(direction) = direction.to_owned() {
                 propose_direction.send(ProposeDirection {
                     id: snake.player_number.clone(),
                     direction,
