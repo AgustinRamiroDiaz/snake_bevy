@@ -39,10 +39,10 @@ Do whatever you want with this code
 - [ ] Add sprites for 
     - [ ] snake head
     - [ ] snake body
-    - [ ] apple
+    - [x] apple
 
-- [ ] Add a win condition
-- [ ] Add some basic AI
+- [x] Add a win condition
+- [x] Add some basic AI
 
 # Ideas
 
