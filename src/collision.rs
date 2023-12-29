@@ -97,14 +97,14 @@ fn remove_chunks(
 ) {
     for RemoveChunks(entity) in event_reader.read() {
         if let Ok((_, mut snake)) = query.get_mut(*entity) {
-            for _ in 0..(snake.segments.len() as f32 * PROPORTION_LOST_PER_HIT).ceil() as i8 {
-                if snake.segments.len() == 1 {
-                    break;
+            let chunks_to_remove = std::cmp::min(
+                snake.segments.len() - 1,
+                (snake.segments.len() as f32 * PROPORTION_LOST_PER_HIT).ceil() as usize,
+            );
+            for _ in 0..chunks_to_remove {
+                if let Some(entity) = snake.segments.pop_back() {
+                    commands.entity(entity).despawn_recursive();
                 }
-
-                commands
-                    .entity(snake.segments.pop_back().unwrap())
-                    .despawn_recursive();
             }
             snake.inmortal_ticks = INMORTAL_TICKS;
         }
