@@ -102,9 +102,10 @@ impl Plugin for SnakePlugin {
                 Update,
                 (
                     toroid_coordinates,
-                    update_local_coordinates_to_world_transforms,
-                    apply_deferred,
                     add_sprite_bundles,
+                    // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
+                    apply_deferred,
+                    update_local_coordinates_to_world_transforms,
                 )
                     .chain()
                     .in_set(InGameSet::Last)
@@ -270,12 +271,6 @@ fn add_sprite_bundles(
                 ..Default::default()
             },
 
-            // TODO: find another way of hiding this
-            // The problem is that the SpriteBundle is added with a Transform, and just in the next frame it's updated to its corresponding Coordinate. So we've got a frame where the sprite is in the wrong place (middle of the screen)
-            // This is a quick patch to spawn the sprite in a place where it's not visible
-            transform: Transform::from_translation(
-                Vec3::ONE * BOARD_VIEWPORT_IN_WORLD_UNITS * 100.0,
-            ),
             ..Default::default()
         });
     }
