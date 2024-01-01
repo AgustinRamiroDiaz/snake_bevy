@@ -71,8 +71,6 @@ pub(crate) struct ProposeDirection {
     pub(crate) direction: Direction,
 }
 
-// mut query: Query<(Entity, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
-
 fn add_snake_input_handler(
     mut commands: Commands,
     snakes: Query<
