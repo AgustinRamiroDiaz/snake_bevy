@@ -37,6 +37,7 @@ Do whatever you want with this code
 # Things I want to do next
 
 - [ ] Add pause/play
+- [ ] Hanle gamepads
 - [ ] Configurable keybindings
 - [ ] Add sprites for
 
