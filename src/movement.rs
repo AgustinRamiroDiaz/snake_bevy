@@ -83,33 +83,28 @@ fn add_snake_input_handler(
 ) {
     for (entity, snake) in snakes.iter() {
         if let Some(mut entity) = commands.get_entity(entity) {
-            let input_map = match snake.player_number.0 {
-                1 => [
-                    (KeyCode::Left, Direction::Left),
-                    (KeyCode::Right, Direction::Right),
-                    (KeyCode::Up, Direction::Up),
-                    (KeyCode::Down, Direction::Down),
-                ],
-                2 => [
-                    (KeyCode::A, Direction::Left),
-                    (KeyCode::D, Direction::Right),
-                    (KeyCode::W, Direction::Up),
-                    (KeyCode::S, Direction::Down),
-                ],
-                3 => [
-                    (KeyCode::J, Direction::Left),
-                    (KeyCode::L, Direction::Right),
-                    (KeyCode::I, Direction::Up),
-                    (KeyCode::K, Direction::Down),
-                ],
+            // VIM ordering
+            let directions = [
+                Direction::Left,
+                Direction::Down,
+                Direction::Up,
+                Direction::Right,
+            ];
+
+            let player_controls = match snake.player_number.0 {
+                1 => [KeyCode::Left, KeyCode::Down, KeyCode::Up, KeyCode::Right],
+                2 => [KeyCode::A, KeyCode::S, KeyCode::W, KeyCode::D],
+                3 => [KeyCode::J, KeyCode::K, KeyCode::I, KeyCode::L],
                 4 => [
-                    (KeyCode::Numpad4, Direction::Left),
-                    (KeyCode::Numpad6, Direction::Right),
-                    (KeyCode::Numpad8, Direction::Up),
-                    (KeyCode::Numpad5, Direction::Down),
+                    KeyCode::Numpad4,
+                    KeyCode::Numpad5,
+                    KeyCode::Numpad8,
+                    KeyCode::Numpad6,
                 ],
                 other => panic!("Invalid player number {}, only 1-4 supported", other),
             };
+
+            let input_map: Vec<_> = std::iter::zip(player_controls, directions).collect();
 
             entity.insert(InputManagerBundle::<Direction> {
                 // Stores "which actions are currently pressed"
