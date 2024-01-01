@@ -229,7 +229,7 @@ pub(crate) struct Snake {
     name: String,
     segments: VecDeque<Entity>,
     direction: Direction,
-    player_number: Id,
+    player_number: Id, // TODO: move into its own component
     trail: Coordinate,
     input_blocked: bool,
     inmortal_ticks: u8,

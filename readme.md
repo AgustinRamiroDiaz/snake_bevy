@@ -3,6 +3,7 @@
 You can play at https://agustinramirodiaz.github.io/snake_bevy/
 
 About the game:
+
 - Similar to snake
 - Eat the apple to grow
 - Hitting yourself or others will shrink you
@@ -35,11 +36,13 @@ Do whatever you want with this code
 
 # Things I want to do next
 
+- [ ] Add pause/play
 - [ ] Configurable keybindings
-- [ ] Add sprites for 
-    - [ ] snake head
-    - [ ] snake body
-    - [x] apple
+- [ ] Add sprites for
+
+  - [ ] snake head
+  - [ ] snake body
+  - [x] apple
 
 - [x] Add a win condition
 - [x] Add some basic AI
@@ -47,20 +50,20 @@ Do whatever you want with this code
 # Ideas
 
 - power ups
-    - speed up
-    - slow down others
-    - invincible for a short time
-    - shield
+  - speed up
+  - slow down others
+  - invincible for a short time
+  - shield
 - different maps
-    - wrap around
-    - walls
-    - obstacles
+  - wrap around
+  - walls
+  - obstacles
 - different game modes
-    - by win condition
-        - hold first position for an amount of time
-        - reach X length first
-        - reach X difference in length to the second player
-    - by game rules
-        - no walls
-        - no obstacles
-        - power up configuration
+  - by win condition
+    - hold first position for an amount of time
+    - reach X length first
+    - reach X difference in length to the second player
+  - by game rules
+    - no walls
+    - no obstacles
+    - power up configuration

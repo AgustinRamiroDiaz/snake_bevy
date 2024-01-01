@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use leafwing_input_manager::prelude::*;
 
 use crate::{coordinate::Coordinate, game_state, Direction, Id, Snake};
 
@@ -12,11 +13,17 @@ impl Plugin for SnakeMovementPlugin {
             SNAKE_TICK_SECONDS,
             TimerMode::Repeating,
         )))
+        .add_plugins(InputManagerPlugin::<Direction>::default())
         .add_event::<ProposeDirection>()
         .add_event::<Tick>()
         .add_systems(
             Update,
-            (tick, input_snake_direction, handle_snake_direction)
+            (
+                tick,
+                input_snake_direction,
+                handle_snake_direction,
+                add_snake_input_handler,
+            )
                 .run_if(in_state(game_state::AppState::InGame)),
         );
     }
@@ -64,6 +71,58 @@ pub(crate) struct ProposeDirection {
     pub(crate) direction: Direction,
 }
 
+// mut query: Query<(Entity, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
+
+fn add_snake_input_handler(
+    mut commands: Commands,
+    snakes: Query<
+        (Entity, &Snake),
+        (
+            Without<InputMap<Direction>>,
+            Without<ActionState<Direction>>,
+        ),
+    >,
+) {
+    for (entity, snake) in snakes.iter() {
+        if let Some(mut entity) = commands.get_entity(entity) {
+            let input_map = match snake.player_number.0 {
+                1 => [
+                    (KeyCode::Left, Direction::Left),
+                    (KeyCode::Right, Direction::Right),
+                    (KeyCode::Up, Direction::Up),
+                    (KeyCode::Down, Direction::Down),
+                ],
+                2 => [
+                    (KeyCode::A, Direction::Left),
+                    (KeyCode::D, Direction::Right),
+                    (KeyCode::W, Direction::Up),
+                    (KeyCode::S, Direction::Down),
+                ],
+                3 => [
+                    (KeyCode::J, Direction::Left),
+                    (KeyCode::L, Direction::Right),
+                    (KeyCode::I, Direction::Up),
+                    (KeyCode::K, Direction::Down),
+                ],
+                4 => [
+                    (KeyCode::Numpad4, Direction::Left),
+                    (KeyCode::Numpad6, Direction::Right),
+                    (KeyCode::Numpad8, Direction::Up),
+                    (KeyCode::Numpad5, Direction::Down),
+                ],
+                other => panic!("Invalid player number {}, only 1-4 supported", other),
+            };
+
+            entity.insert(InputManagerBundle::<Direction> {
+                // Stores "which actions are currently pressed"
+                action_state: ActionState::default(),
+                // Describes how to convert from player inputs into those actions
+                input_map: InputMap::new(input_map),
+            });
+        }
+    }
+}
+
 // TODO: can we remove the `clone`s?
 fn handle_snake_direction(
     mut snakes: Query<&mut Snake>,
@@ -87,67 +146,21 @@ fn handle_snake_direction(
     }
 }
 
-// Eventually we could use https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/multiplayer.rs for better input handling
 fn input_snake_direction(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Snake>,
+    mut query: Query<(&mut Snake, &ActionState<Direction>)>,
     mut propose_direction: EventWriter<ProposeDirection>,
 ) {
-    for snake in query.iter_mut().filter(|snake| !snake.input_blocked) {
-        let direction = match snake.player_number.0 {
-            1 => {
-                if keyboard_input.pressed(KeyCode::Left) {
-                    Some(Direction::Left)
-                } else if keyboard_input.pressed(KeyCode::Right) {
-                    Some(Direction::Right)
-                } else if keyboard_input.pressed(KeyCode::Up) {
-                    Some(Direction::Up)
-                } else if keyboard_input.pressed(KeyCode::Down) {
-                    Some(Direction::Down)
-                } else {
-                    None
-                }
-            }
-            2 => {
-                if keyboard_input.pressed(KeyCode::A) {
-                    Some(Direction::Left)
-                } else if keyboard_input.pressed(KeyCode::D) {
-                    Some(Direction::Right)
-                } else if keyboard_input.pressed(KeyCode::W) {
-                    Some(Direction::Up)
-                } else if keyboard_input.pressed(KeyCode::S) {
-                    Some(Direction::Down)
-                } else {
-                    None
-                }
-            }
-            3 => {
-                if keyboard_input.pressed(KeyCode::J) {
-                    Some(Direction::Left)
-                } else if keyboard_input.pressed(KeyCode::L) {
-                    Some(Direction::Right)
-                } else if keyboard_input.pressed(KeyCode::I) {
-                    Some(Direction::Up)
-                } else if keyboard_input.pressed(KeyCode::K) {
-                    Some(Direction::Down)
-                } else {
-                    None
-                }
-            }
-            4 => {
-                if keyboard_input.pressed(KeyCode::Numpad4) {
-                    Some(Direction::Left)
-                } else if keyboard_input.pressed(KeyCode::Numpad6) {
-                    Some(Direction::Right)
-                } else if keyboard_input.pressed(KeyCode::Numpad8) {
-                    Some(Direction::Up)
-                } else if keyboard_input.pressed(KeyCode::Numpad5) {
-                    Some(Direction::Down)
-                } else {
-                    None
-                }
-            }
-            other => panic!("Invalid player number {}, only 1-4 supported", other),
+    for (snake, direction) in query.iter_mut().filter(|(snake, _)| !snake.input_blocked) {
+        let direction = if direction.just_pressed(Direction::Left) {
+            Some(Direction::Left)
+        } else if direction.just_pressed(Direction::Right) {
+            Some(Direction::Right)
+        } else if direction.just_pressed(Direction::Up) {
+            Some(Direction::Up)
+        } else if direction.just_pressed(Direction::Down) {
+            Some(Direction::Down)
+        } else {
+            None
         };
 
         if let Some(direction) = direction {

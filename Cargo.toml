@@ -9,6 +9,7 @@ edition = "2021"
 bevy = "0.12.0"
 rand = "0.8.5"
 bevy_egui = "0.23"
+leafwing-input-manager = "0.11.2"
 
 
 # Enable a small amount of optimization in debug mode
