@@ -91,7 +91,7 @@ fn add_snake_input_handler(
                 Direction::Right,
             ];
 
-            let player_controls = match snake.player_number.0 {
+            let player_keys = match snake.player_number.0 {
                 1 => [KeyCode::Left, KeyCode::Down, KeyCode::Up, KeyCode::Right],
                 2 => [KeyCode::A, KeyCode::S, KeyCode::W, KeyCode::D],
                 3 => [KeyCode::J, KeyCode::K, KeyCode::I, KeyCode::L],
@@ -104,13 +104,39 @@ fn add_snake_input_handler(
                 other => panic!("Invalid player number {}, only 1-4 supported", other),
             };
 
-            let input_map: Vec<_> = std::iter::zip(player_controls, directions).collect();
+            // TODO: handle gamepad controls for more players
+            // Currently only player 1 is supported
+            // You'll also need to add logic to handle the Gamepad Id in the input map below
+            let player_gamepad = match snake.player_number.0 {
+                1 => [
+                    vec![GamepadButtonType::DPadLeft],
+                    vec![GamepadButtonType::DPadDown],
+                    vec![GamepadButtonType::DPadUp],
+                    vec![GamepadButtonType::DPadRight],
+                ],
+                2 => [vec![], vec![], vec![], vec![]],
+                3 => [vec![], vec![], vec![], vec![]],
+                4 => [vec![], vec![], vec![], vec![]],
+                other => panic!("Invalid player number {}, only 1-4 supported", other),
+            };
+
+            let mut input_map = InputMap::default();
+
+            for (player_controls, direction) in std::iter::zip(player_keys, directions) {
+                input_map.insert(player_controls, direction);
+            }
+
+            for (player_controls, direction) in std::iter::zip(player_gamepad, directions) {
+                input_map.insert_many_to_one(player_controls, direction);
+            }
+
+            input_map = input_map.set_gamepad(Gamepad { id: 0 }).build();
 
             entity.insert(InputManagerBundle::<Direction> {
                 // Stores "which actions are currently pressed"
                 action_state: ActionState::default(),
                 // Describes how to convert from player inputs into those actions
-                input_map: InputMap::new(input_map),
+                input_map,
             });
         }
     }
