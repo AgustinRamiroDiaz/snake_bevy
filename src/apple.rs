@@ -53,7 +53,6 @@ pub(crate) struct Apple;
 #[derive(Event)]
 pub(crate) struct AppleEaten(pub(crate) Entity);
 
-// TODO: decouple this logic into smaller units
 fn eat_apple(
     mut commands: Commands,
     mut snakes: Query<(Entity, &mut Snake)>,
@@ -70,6 +69,7 @@ fn eat_apple(
     for (entity, snake) in snakes.iter_mut() {
         for (apple, coord) in apples.iter() {
             if Some(coord) == get_head(&snake) {
+                // The despawn and spawn could be handled by events, but that would require configuring ordering in order to make sure we don't get to an inconsistent state. https://bevy-cheatbook.github.io/programming/events.html#possible-pitfalls
                 commands.entity(apple).despawn();
                 spawn_apple(&mut commands, &assets);
                 apple_eaten.send(AppleEaten(entity));
