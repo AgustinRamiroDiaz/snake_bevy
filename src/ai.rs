@@ -40,6 +40,7 @@ fn go_to_apple(
         for snake in snakes
             .iter_mut()
             .filter(|s| players_to_follow.0.contains(&s.player_number))
+            .filter(|snake| !snake.input_blocked)
         {
             // TODO: don't unwrap
             let snake_head = coordinates.get(*snake.segments.front().unwrap()).unwrap();
