@@ -2,8 +2,12 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use super::{
-    asset_loader::SceneAssets, coordinate::Coordinate, game_state::AppState, schedule::InGameSet,
-    Depth, MyColor, Snake, SnakeSegment, HALF_LEN, SIZE,
+    asset_loader::SceneAssets,
+    coordinate::Coordinate,
+    game_state::AppState,
+    schedule::InGameSet,
+    snake::{Depth, MyColor, Snake, SnakeSegment},
+    HALF_LEN, SIZE,
 };
 
 pub(crate) struct ApplePlugin;

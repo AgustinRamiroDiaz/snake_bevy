@@ -4,10 +4,10 @@ use rand::prelude::*;
 
 use crate::apple::Apple;
 use crate::coordinate::Coordinate;
+use crate::snake::Snake;
 use crate::Direction;
 use crate::Id;
 use crate::ProposeDirection;
-use crate::Snake;
 use crate::HALF_LEN;
 
 use rand;

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::iter;
 
-use crate::{game_state, main_menu::NumberOfPlayersSelected, MyColor, Snake};
+use crate::{game_state, main_menu::NumberOfPlayersSelected, snake::MyColor, snake::Snake};
 
 pub(crate) struct ScorePlugin;
 

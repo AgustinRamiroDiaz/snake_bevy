@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::coordinate::Coordinate;
 
 use super::game_state::AppState;
-use super::Snake;
+use super::snake::Snake;
 
 use super::blink::{BlinkPlugin, Blinking};
 use super::movement::Tick;

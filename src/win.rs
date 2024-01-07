@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::game_state::AppState;
-use crate::{MyColor, Snake};
+use crate::snake::{MyColor, Snake};
 
 const LENGTH_TO_WIN: usize = 10;
 const HOLD_TIME_TO_WIN: f32 = 10.0;
