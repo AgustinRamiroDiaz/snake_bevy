@@ -145,24 +145,23 @@ fn add_snake_input_handler(
     }
 }
 
-// TODO: can we remove the `clone`s?
 fn handle_snake_direction(
     mut snakes: Query<&mut Snake>,
     mut proposed_direction: EventReader<ProposeDirection>,
 ) {
-    for direction in proposed_direction.read() {
+    for proposed_direction in proposed_direction.read() {
         for mut snake in snakes
             .iter_mut()
-            .filter(|snake| snake.player_number == direction.id)
+            .filter(|snake| snake.player_number == proposed_direction.id)
             .filter(|snake| !snake.input_blocked)
         {
-            if snake.direction == !direction.direction.clone() {
+            if snake.direction == !proposed_direction.direction {
                 return;
             }
-            if snake.direction == direction.direction.clone() {
+            if snake.direction == proposed_direction.direction {
                 return;
             }
-            snake.direction = direction.direction.clone();
+            snake.direction = proposed_direction.direction;
             snake.input_blocked = true;
         }
     }
