@@ -29,6 +29,9 @@ impl Plugin for ApplePlugin {
 
 fn setup(mut commands: Commands, assets: Res<SceneAssets>) {
     spawn_apple(&mut commands, &assets);
+    spawn_apple(&mut commands, &assets);
+    spawn_apple(&mut commands, &assets);
+    spawn_apple(&mut commands, &assets);
 }
 
 fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
