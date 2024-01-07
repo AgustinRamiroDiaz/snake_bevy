@@ -13,7 +13,6 @@ use crate::HALF_LEN;
 use rand;
 
 // TODO:
-// - fix: this snake can go backwards into itself
 // - improve: this snake doesn't do the shortest path accounting for the toroid
 
 pub(crate) struct AIPlugin {
