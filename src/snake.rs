@@ -149,7 +149,7 @@ pub(crate) struct Snake {
     pub(crate) direction: Direction,
     pub(crate) player_number: Id,
     pub(crate) trail: Coordinate,
-    pub(crate) input_blocked: bool,
+    pub(crate) input_blocked: bool, // TODO: is it reasonable to move this into its own component given that we filter by it?
     pub(crate) inmortal_ticks: u8,
 }
 
