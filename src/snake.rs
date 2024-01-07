@@ -14,7 +14,7 @@ const TILE_SIZE: f32 = 1.1;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
+        app.add_systems(Startup, setup_grid_and_camera)
             .add_systems(
                 Update,
                 (
@@ -36,7 +36,7 @@ impl Plugin for SnakePlugin {
     }
 }
 
-fn setup(mut commands: Commands) {
+fn setup_grid_and_camera(mut commands: Commands) {
     let mut grid = vec![];
 
     for x in -HALF_LEN..=HALF_LEN {
@@ -158,8 +158,26 @@ pub(crate) struct Id(pub(crate) u8);
 #[derive(Component)]
 pub(crate) struct SnakeSegment;
 
+fn toroid_coordinates(
+    mut query: Query<&mut Coordinate, (With<SnakeSegment>, Changed<Coordinate>)>,
+) {
+    for mut coordinate in query.iter_mut() {
+        if coordinate.0.x.abs() > HALF_LEN as f32 {
+            coordinate.0.x = -coordinate.0.x.signum() * HALF_LEN as f32;
+        }
+        if coordinate.0.y.abs() > HALF_LEN as f32 {
+            coordinate.0.y = -coordinate.0.y.signum() * HALF_LEN as f32;
+        }
+    }
+}
+
+// UI sprite handling
+
 #[derive(Component, Clone, Copy)]
 pub(crate) struct MyColor(pub(crate) Color);
+
+#[derive(Component)]
+pub(crate) struct Depth(pub(crate) f32);
 
 fn update_local_coordinates_to_world_transforms(
     mut query: Query<
@@ -171,9 +189,6 @@ fn update_local_coordinates_to_world_transforms(
         transform.translation = coordinate.0.extend(depth.map_or(0.0, |x| x.0))
     }
 }
-
-#[derive(Component)]
-pub(crate) struct Depth(pub(crate) f32);
 
 // TODO: we assume that Transform == SpriteBundle
 fn add_sprite_bundles(
@@ -202,18 +217,5 @@ fn set_sprite_size(mut query: Query<&mut Sprite, Added<Tile>>) {
             x: TILE_SIZE,
             y: TILE_SIZE,
         });
-    }
-}
-
-fn toroid_coordinates(
-    mut query: Query<&mut Coordinate, (With<SnakeSegment>, Changed<Coordinate>)>,
-) {
-    for mut coordinate in query.iter_mut() {
-        if coordinate.0.x.abs() > HALF_LEN as f32 {
-            coordinate.0.x = -coordinate.0.x.signum() * HALF_LEN as f32;
-        }
-        if coordinate.0.y.abs() > HALF_LEN as f32 {
-            coordinate.0.y = -coordinate.0.y.signum() * HALF_LEN as f32;
-        }
     }
 }
