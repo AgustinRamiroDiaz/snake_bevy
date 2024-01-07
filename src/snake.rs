@@ -10,6 +10,8 @@ use crate::{
 
 pub(crate) struct SnakePlugin;
 
+const TILE_SIZE: f32 = 1.1;
+
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
@@ -20,6 +22,7 @@ impl Plugin for SnakePlugin {
                     add_sprite_bundles,
                     // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
                     apply_deferred,
+                    set_sprite_size,
                     update_local_coordinates_to_world_transforms,
                 )
                     .chain()
@@ -72,7 +75,7 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
     let mut spawn_snake =
         |id, spawn_coord: Coordinate, direction: Direction, color: MyColor, name: String| {
             let head_a = commands
-                .spawn((color, SnakeSegment, spawn_coord.clone()))
+                .spawn((color, SnakeSegment, spawn_coord.clone(), Tile))
                 .id();
 
             commands.spawn((
@@ -86,6 +89,7 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
                     name,
                 },
                 color,
+                Tile,
             ));
         };
 
@@ -173,18 +177,30 @@ pub(crate) struct Depth(pub(crate) f32);
 
 // TODO: we assume that Transform == SpriteBundle
 fn add_sprite_bundles(
-    mut query: Query<(Entity, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
+    query: Query<(Entity, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
     mut commands: Commands,
 ) {
-    for (entity, color) in query.iter_mut() {
+    for (entity, color) in query.iter() {
         commands.entity(entity).insert(SpriteBundle {
             sprite: Sprite {
-                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                // custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
                 color: color.0,
                 ..Default::default()
             },
 
             ..Default::default()
+        });
+    }
+}
+
+#[derive(Component)]
+pub(crate) struct Tile;
+
+fn set_sprite_size(mut query: Query<&mut Sprite, Added<Tile>>) {
+    for mut sprite in query.iter_mut() {
+        sprite.custom_size = Some(Vec2 {
+            x: TILE_SIZE,
+            y: TILE_SIZE,
         });
     }
 }

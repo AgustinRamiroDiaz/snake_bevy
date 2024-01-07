@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 use rand::Rng;
 
+use crate::snake::Tile;
+
 use super::{
     asset_loader::SceneAssets,
     coordinate::Coordinate,
     game_state::AppState,
     schedule::InGameSet,
     snake::{Depth, MyColor, Snake, SnakeSegment},
-    HALF_LEN, SIZE,
+    HALF_LEN,
 };
 
 pub(crate) struct ApplePlugin;
@@ -36,15 +38,10 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
         SpriteBundle {
-            // TODO: remove the need to specify size here
-            // This should be handled by `add_sprite_bundles`
-            sprite: Sprite {
-                custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                ..Default::default()
-            },
             texture: assets.apple.clone(),
             ..default()
         },
+        Tile,
     ));
 }
 
@@ -72,7 +69,7 @@ fn eat_apple(
                 spawn_apple(&mut commands, &assets);
 
                 let tail = commands
-                    .spawn((color, SnakeSegment, snake.trail.clone()))
+                    .spawn((color, SnakeSegment, snake.trail.clone(), Tile))
                     .id();
 
                 snake.segments.push_back(tail);
