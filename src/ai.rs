@@ -33,52 +33,55 @@ fn go_to_apple(
     coordinates: Query<&Coordinate>,
     mut propose_direction: EventWriter<ProposeDirection>,
 ) {
-    if let Some((_, apple)) = apples.iter().next() {
-        for snake in snakes
-            .iter_mut()
-            .filter(|s| players_to_follow.0.contains(&s.player_number))
-            .filter(|snake| !snake.input_blocked)
-        {
-            // TODO: don't unwrap
-            let snake_head = coordinates.get(*snake.segments.front().unwrap()).unwrap();
+    let apples = apples.iter().collect::<Vec<_>>();
+    for snake in snakes
+        .iter_mut()
+        .filter(|s| players_to_follow.0.contains(&s.player_number))
+        .filter(|snake| !snake.input_blocked)
+    {
+        // TODO: picking random apples doesn't work because in each iteration the snake will pick a different apple
+        // We need to either pick the closest apple or make sure that the snake doesn't change its mind
+        // let ( _, apple) = apples.choose(&mut rand::thread_rng()).unwrap();
+        let (_, apple) = apples.first().unwrap();
+        // TODO: don't unwrap
+        let snake_head = coordinates.get(*snake.segments.front().unwrap()).unwrap();
 
-            let mut direction_x = if snake_head.0.x > apple.0.x {
-                Some(Direction::Left)
-            } else if snake_head.0.x < apple.0.x {
-                Some(Direction::Right)
-            } else {
-                None
-            };
+        let mut direction_x = if snake_head.0.x > apple.0.x {
+            Some(Direction::Left)
+        } else if snake_head.0.x < apple.0.x {
+            Some(Direction::Right)
+        } else {
+            None
+        };
 
-            if (snake_head.0.x - apple.0.x).abs() > HALF_LEN as f32 {
-                direction_x = direction_x.map(|d| !d);
-            }
+        if (snake_head.0.x - apple.0.x).abs() > HALF_LEN as f32 {
+            direction_x = direction_x.map(|d| !d);
+        }
 
-            let mut direction_y = if snake_head.0.y > apple.0.y {
-                Some(Direction::Down)
-            } else if snake_head.0.y < apple.0.y {
-                Some(Direction::Up)
-            } else {
-                None
-            };
+        let mut direction_y = if snake_head.0.y > apple.0.y {
+            Some(Direction::Down)
+        } else if snake_head.0.y < apple.0.y {
+            Some(Direction::Up)
+        } else {
+            None
+        };
 
-            if (snake_head.0.y - apple.0.y).abs() > HALF_LEN as f32 {
-                direction_y = direction_y.map(|d| !d);
-            };
+        if (snake_head.0.y - apple.0.y).abs() > HALF_LEN as f32 {
+            direction_y = direction_y.map(|d| !d);
+        };
 
-            // Randomize decision so all snakes don't do the same
-            let weights = [1, 1, 20];
-            let choices = [direction_x, direction_y, None];
-            let direction = &choices[WeightedIndex::new(weights)
-                .unwrap()
-                .sample(&mut rand::thread_rng())];
+        // Randomize decision so all snakes don't do the same
+        let weights = [1, 1, 20];
+        let choices = [direction_x, direction_y, None];
+        let direction = &choices[WeightedIndex::new(weights)
+            .unwrap()
+            .sample(&mut rand::thread_rng())];
 
-            if let Some(direction) = direction.to_owned() {
-                propose_direction.send(ProposeDirection {
-                    id: snake.player_number.clone(),
-                    direction,
-                });
-            }
+        if let Some(direction) = direction.to_owned() {
+            propose_direction.send(ProposeDirection {
+                id: snake.player_number.clone(),
+                direction,
+            });
         }
     }
 }
