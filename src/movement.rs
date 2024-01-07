@@ -44,22 +44,25 @@ fn tick(
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         tick.send(Tick);
-        for mut snake in query.iter_mut() {
-            snake.input_blocked = false;
-            // TODO: don't unwrap
-            let &tail_entity = snake.segments.back().unwrap();
-            let &head_entity = snake.segments.front().unwrap();
+        query
+            .iter_mut()
+            .flat_map(|mut snake| {
+                snake.input_blocked = false;
+                let &tail_entity = snake.segments.back()?;
+                let &head_entity = snake.segments.front()?;
 
-            let head = entity_query.get_mut(head_entity).unwrap();
+                let head = entity_query.get_mut(head_entity).unwrap();
 
-            let head_translation = head.0;
+                let head_translation = head.0;
 
-            if let Ok(mut tail) = entity_query.get_mut(tail_entity) {
-                snake.trail = Coordinate(tail.0); // TODO: remove double conversion
-                tail.0 = head_translation + Into::<Vec2>::into(snake.direction.clone());
-                snake.segments.rotate_right(1);
-            }
-        }
+                if let Ok(mut tail) = entity_query.get_mut(tail_entity) {
+                    snake.trail = Coordinate(tail.0); // TODO: remove double conversion
+                    tail.0 = head_translation + Into::<Vec2>::into(snake.direction.clone());
+                    snake.segments.rotate_right(1);
+                }
+                Some(())
+            })
+            .for_each(|_| ());
     }
 }
 
