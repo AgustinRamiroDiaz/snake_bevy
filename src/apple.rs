@@ -8,7 +8,7 @@ use super::{
     coordinate::Coordinate,
     game_state::AppState,
     schedule::InGameSet,
-    snake::{Depth, MyColor, Snake, SnakeSegment},
+    snake::{Depth, Snake},
     HALF_LEN,
 };
 
@@ -16,12 +16,14 @@ pub(crate) struct ApplePlugin;
 
 impl Plugin for ApplePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup).add_systems(
-            Update,
-            eat_apple
-                .in_set(InGameSet::SpawnDespawnEntities)
-                .run_if(in_state(AppState::InGame)),
-        );
+        app.add_event::<AppleEaten>()
+            .add_systems(Startup, setup)
+            .add_systems(
+                Update,
+                eat_apple
+                    .in_set(InGameSet::SpawnDespawnEntities)
+                    .run_if(in_state(AppState::InGame)),
+            );
     }
 }
 
@@ -48,31 +50,29 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
 #[derive(Component)]
 pub(crate) struct Apple;
 
+#[derive(Event)]
+pub(crate) struct AppleEaten(pub(crate) Entity);
+
 // TODO: decouple this logic into smaller units
-// TODO: decouple spawning from eating
 fn eat_apple(
     mut commands: Commands,
-    mut snakes: Query<(&mut Snake, &MyColor)>,
+    mut snakes: Query<(Entity, &mut Snake)>,
     coordinates: Query<&Coordinate>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
     assets: Res<SceneAssets>,
+    mut apple_eaten: EventWriter<AppleEaten>,
 ) {
     let get_head = |snake: &Snake| {
         let &head = snake.segments.front()?;
         coordinates.get(head).ok()
     };
 
-    for (mut snake, &color) in snakes.iter_mut() {
+    for (entity, snake) in snakes.iter_mut() {
         for (apple, coord) in apples.iter() {
-            if coord == get_head(&snake).unwrap() {
+            if Some(coord) == get_head(&snake) {
                 commands.entity(apple).despawn();
                 spawn_apple(&mut commands, &assets);
-
-                let tail = commands
-                    .spawn((color, SnakeSegment, snake.trail.clone(), Tile))
-                    .id();
-
-                snake.segments.push_back(tail);
+                apple_eaten.send(AppleEaten(entity));
                 return;
             }
         }

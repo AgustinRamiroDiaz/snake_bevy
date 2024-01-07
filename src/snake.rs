@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 
 use crate::{
-    coordinate::Coordinate, direction::Direction, game_state::AppState,
+    apple::AppleEaten, coordinate::Coordinate, direction::Direction, game_state::AppState,
     main_menu::NumberOfPlayersSelected, schedule::InGameSet, BOARD_VIEWPORT_IN_WORLD_UNITS,
     HALF_LEN, SIZE,
 };
@@ -18,10 +18,11 @@ impl Plugin for SnakePlugin {
             .add_systems(
                 Update,
                 (
+                    grow_snake,
+                    apply_deferred,
                     toroid_coordinates,
                     add_sprite_bundles,
-                    // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
-                    apply_deferred,
+                    apply_deferred, // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
                     set_sprite_size,
                     update_local_coordinates_to_world_transforms,
                 )
@@ -158,6 +159,22 @@ pub(crate) struct Id(pub(crate) u8);
 #[derive(Component)]
 pub(crate) struct SnakeSegment;
 
+fn grow_snake(
+    mut commands: Commands,
+    mut query: Query<(&mut Snake, &MyColor)>,
+    mut apple_eaten: EventReader<AppleEaten>,
+) {
+    for AppleEaten(entity) in apple_eaten.read() {
+        if let Ok((mut snake, &color)) = query.get_mut(*entity) {
+            let tail = commands
+                .spawn((color, SnakeSegment, snake.trail.clone(), Tile))
+                .id();
+
+            snake.segments.push_back(tail);
+        }
+    }
+}
+
 fn toroid_coordinates(
     mut query: Query<&mut Coordinate, (With<SnakeSegment>, Changed<Coordinate>)>,
 ) {
@@ -198,7 +215,6 @@ fn add_sprite_bundles(
     for (entity, color) in query.iter() {
         commands.entity(entity).insert(SpriteBundle {
             sprite: Sprite {
-                // custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
                 color: color.0,
                 ..Default::default()
             },
