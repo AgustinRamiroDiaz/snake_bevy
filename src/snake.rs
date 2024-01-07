@@ -10,7 +10,7 @@ use crate::{
 
 pub(crate) struct SnakePlugin;
 
-const TILE_SIZE: f32 = 1.1;
+const TILE_SIZE: f32 = 1.0;
 
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
