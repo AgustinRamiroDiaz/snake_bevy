@@ -68,3 +68,7 @@ Do whatever you want with this code
     - no walls
     - no obstacles
     - power up configuration
+
+# Notes
+
+I've been able to build for web with [this guide](https://dev.to/sbelzile/making-games-in-rust-deploying-a-bevy-app-to-the-web-1ahn) too, but I didn't publish it like this since there wasn't any difference with the trunk version.
