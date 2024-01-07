@@ -12,9 +12,6 @@ use crate::HALF_LEN;
 
 use rand;
 
-// TODO:
-// - improve: this snake doesn't do the shortest path accounting for the toroid
-
 pub(crate) struct AIPlugin {
     pub(crate) player_numbers: Vec<Id>,
 }
