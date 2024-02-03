@@ -63,6 +63,7 @@ fn main() {
                     #[cfg(not(target_arch = "wasm32"))]
                     mode: WindowMode::BorderlessFullscreen,
                     fit_canvas_to_parent: true,
+                    prevent_default_event_handling: false,
                     resizable: true,
                     ..default()
                 }),
