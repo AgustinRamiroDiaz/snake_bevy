@@ -36,8 +36,7 @@ Do whatever you want with this code
 
 # TODO:
 
-- [ ] Fix scrolling on web
-- [ ] migrate to latest bevy version
+- [ ] fix deployment https://trunkrs.dev/advanced/
 
 # Things I want to do next
 
