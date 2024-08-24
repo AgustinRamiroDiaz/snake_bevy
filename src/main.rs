@@ -1,4 +1,6 @@
-use bevy::{prelude::*, window::WindowMode};
+#[cfg(not(target_arch = "wasm32"))]
+use bevy::window::WindowMode;
+use bevy::{asset::AssetMetaCheck, prelude::*};
 use movement::ProposeDirection;
 
 mod coordinate;
@@ -53,9 +55,12 @@ const MAX_NUMBER_OF_PLAYERS: usize = 4;
 
 fn main() {
     let mut app = App::new();
-
     app.add_plugins((
         DefaultPlugins
+            .set(AssetPlugin {
+                meta_check: AssetMetaCheck::Never, // https://github.com/bevyengine/bevy/issues/10157#issuecomment-2217168402
+                ..default()
+            })
             .set(ImagePlugin::default_nearest())
             .set(WindowPlugin {
                 primary_window: Some(Window {

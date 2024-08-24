@@ -2430,8 +2430,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 [[package]]
 name = "leafwing-input-manager"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10cfa701709bb37011dd09965a76ff981f6284ed5b8ac0e5089dcd311efeff49"
+source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager?rev=c15d0e6#c15d0e60cd130825e486f359f0d45b1a975ea2c3"
 dependencies = [
  "bevy",
  "derive_more",
@@ -2448,8 +2447,7 @@ dependencies = [
 [[package]]
 name = "leafwing_input_manager_macros"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61ff6f0b220de1c284422f6af6a529acfaa5dab76ee86d6167eb2ee34502290c"
+source = "git+https://github.com/Leafwing-Studios/leafwing-input-manager?rev=c15d0e6#c15d0e60cd130825e486f359f0d45b1a975ea2c3"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
