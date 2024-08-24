@@ -39,11 +39,11 @@ jobs:
       - name: Build the Rust WASM app and all of its assets
         run: trunk build --public-url ${{ github.event.repository.name }} --release
 
-      # - name: Optimize the Rust WASM app
-      #   uses: NiklasEi/wasm-opt-action@v2
-      #   with:
-      #     file: dist/*.wasm
-      #     optimize_all: true
+      - name: Optimize the Rust WASM app
+        uses: NiklasEi/wasm-opt-action@v2
+        with:
+          file: dist/*.wasm
+          optimize_all: true
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -57,10 +57,6 @@ jobs:
     permissions:
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     runs-on: ubuntu-latest
     steps:
