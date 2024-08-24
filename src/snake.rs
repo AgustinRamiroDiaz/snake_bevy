@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::prelude::*;
+use bevy::{color::palettes::css, prelude::*};
 
 use crate::{
     apple::AppleEaten, coordinate::Coordinate, direction::Direction, game_state::AppState,
@@ -46,7 +46,7 @@ fn setup_grid_and_camera(mut commands: Commands) {
                 SpriteBundle {
                     sprite: Sprite {
                         custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                        color: Color::DARK_GRAY,
+                        color: Color::Srgba(css::DARK_SLATE_GRAY),
                         ..Default::default()
                     },
                     ..Default::default()
@@ -99,28 +99,28 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
             Id(1),
             Coordinate::from((-3.0, -3.0)),
             Direction::Right,
-            MyColor(Color::LIME_GREEN),
+            MyColor(Color::Srgba(css::LIMEGREEN)),
             "Ninja".to_string(),
         ),
         (
             Id(2),
             Coordinate::from((3.0, 3.0)),
             Direction::Left,
-            MyColor(Color::PINK),
+            MyColor(Color::Srgba(css::PINK)),
             "Panther".to_string(),
         ),
         (
             Id(3),
             Coordinate::from((-3.0, 3.0)),
             Direction::Down,
-            MyColor(Color::SALMON),
+            MyColor(Color::Srgba(css::SALMON)),
             "Sushi".to_string(),
         ),
         (
             Id(4),
             Coordinate::from((3.0, -3.0)),
             Direction::Up,
-            MyColor(Color::TURQUOISE),
+            MyColor(Color::Srgba(css::TURQUOISE)),
             "Sonic".to_string(),
         ),
     ];

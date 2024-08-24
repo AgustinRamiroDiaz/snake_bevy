@@ -29,8 +29,8 @@ fn blink_tick(
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut sprite in blinking.iter_mut() {
-            let current_alpha = sprite.color.a();
-            sprite.color.set_a(1.0 - current_alpha);
+            let current_alpha = sprite.color.alpha();
+            sprite.color.set_alpha(1.0 - current_alpha);
         }
     }
 }

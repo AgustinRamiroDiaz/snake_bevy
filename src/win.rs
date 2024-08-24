@@ -87,7 +87,7 @@ fn setup(mut commands: Commands) {
                 ..default()
             },
         ) // Set the alignment of the Text
-        .with_text_alignment(TextAlignment::Center)
+        .with_text_justify(JustifyText::Center)
         // Set the style of the TextBundle itself.
         .with_style(Style {
             position_type: PositionType::Absolute,

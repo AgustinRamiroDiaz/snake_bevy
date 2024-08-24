@@ -95,9 +95,14 @@ fn add_snake_input_handler(
             ];
 
             let player_keys = match snake.player_number.0 {
-                1 => [KeyCode::Left, KeyCode::Down, KeyCode::Up, KeyCode::Right],
-                2 => [KeyCode::A, KeyCode::S, KeyCode::W, KeyCode::D],
-                3 => [KeyCode::J, KeyCode::K, KeyCode::I, KeyCode::L],
+                1 => [
+                    KeyCode::ArrowLeft,
+                    KeyCode::ArrowDown,
+                    KeyCode::ArrowUp,
+                    KeyCode::ArrowRight,
+                ],
+                2 => [KeyCode::KeyA, KeyCode::KeyS, KeyCode::KeyW, KeyCode::KeyD],
+                3 => [KeyCode::KeyJ, KeyCode::KeyK, KeyCode::KeyI, KeyCode::KeyL],
                 4 => [
                     KeyCode::Numpad4,
                     KeyCode::Numpad5,
@@ -126,14 +131,14 @@ fn add_snake_input_handler(
             let mut input_map = InputMap::default();
 
             for (player_controls, direction) in std::iter::zip(player_keys, directions) {
-                input_map.insert(player_controls, direction);
+                input_map.insert(direction, player_controls);
             }
 
             for (player_controls, direction) in std::iter::zip(player_gamepad, directions) {
-                input_map.insert_many_to_one(player_controls, direction);
+                input_map.insert_one_to_many(direction, player_controls);
             }
 
-            input_map = input_map.set_gamepad(Gamepad { id: 0 }).build();
+            input_map.set_gamepad(Gamepad { id: 0 });
 
             entity.insert(InputManagerBundle::<Direction> {
                 // Stores "which actions are currently pressed"
@@ -172,13 +177,13 @@ fn input_snake_direction(
     mut propose_direction: EventWriter<ProposeDirection>,
 ) {
     for (snake, direction) in query.iter_mut().filter(|(snake, _)| !snake.input_blocked) {
-        let direction = if direction.just_pressed(Direction::Left) {
+        let direction = if direction.just_pressed(&Direction::Left) {
             Some(Direction::Left)
-        } else if direction.just_pressed(Direction::Right) {
+        } else if direction.just_pressed(&Direction::Right) {
             Some(Direction::Right)
-        } else if direction.just_pressed(Direction::Up) {
+        } else if direction.just_pressed(&Direction::Up) {
             Some(Direction::Up)
-        } else if direction.just_pressed(Direction::Down) {
+        } else if direction.just_pressed(&Direction::Down) {
             Some(Direction::Down)
         } else {
             None
