@@ -34,6 +34,11 @@ Issues, feature requests and pull requests are welcome!
 
 Do whatever you want with this code
 
+# TODO:
+
+- [ ] Fix scrolling on web
+- [ ] migrate to latest bevy version
+
 # Things I want to do next
 
 - [ ] Add pause/play
