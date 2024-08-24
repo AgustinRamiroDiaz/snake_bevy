@@ -45,6 +45,16 @@ jobs:
           file: dist/*.wasm
           optimize_all: true
 
+      - name: Save cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
