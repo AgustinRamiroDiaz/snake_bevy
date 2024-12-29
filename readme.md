@@ -40,6 +40,7 @@ Do whatever you want with this code
 
 # Things I want to do next
 
+- [ ] Add world sync for systems to decouple data from rendering, like having a first set of systems do calculations and a second set to render based on the updated data
 - [ ] Add pause/play
 - [ ] Hanle gamepads
 - [ ] Configurable keybindings
