@@ -9,23 +9,6 @@ About the game:
 - Hitting yourself or others will shrink you
 - 1-4 players
 
-# Running the game
-
-Requires Rust and Cargo to be installed.
-
-```
-cargo run
-```
-
-## Running with trunk
-
-You can also use trunk to run the game on web. This will automatically reload the game when you make changes.
-
-```
-cargo install trunk
-trunk serve
-```
-
 # Contributing
 
 Issues, feature requests and pull requests are welcome!
@@ -33,10 +16,6 @@ Issues, feature requests and pull requests are welcome!
 # License
 
 Do whatever you want with this code
-
-# TODO:
-
-- [ ] fix deployment https://trunkrs.dev/advanced/
 
 # Things I want to do next
 
