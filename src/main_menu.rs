@@ -4,7 +4,7 @@ use crate::win::Won;
 
 use super::game_state::AppState;
 
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 
 pub(crate) struct MainMenu {
     pub(crate) max_number_of_players: usize,
@@ -15,43 +15,57 @@ impl Plugin for MainMenu {
         app.add_plugins(EguiPlugin::default())
             .insert_resource(MaxNumberOfPlayers(self.max_number_of_players))
             .insert_resource(NumberOfPlayersSelected(self.max_number_of_players))
-            .add_systems(Update, (selection).run_if(in_state(AppState::MainMenu)))
-            .add_systems(Update, (winner_text, how_to_play))
+            .add_systems(
+                EguiPrimaryContextPass,
+                selection_wrapper.run_if(in_state(AppState::MainMenu)),
+            )
+            .add_systems(Update, winner_text)
+            .add_systems(EguiPrimaryContextPass, how_to_play_wrapper)
             .add_systems(OnExit(AppState::MainMenu), remove_winner_text);
     }
 }
 
-fn how_to_play(mut contexts: EguiContexts) {
-    if let Ok(ctx) = contexts.ctx_mut() {
-        egui::Window::new("How to play").show(ctx, |ui| {
-            ui.label("`Esc` escape key to open the menu");
-            ui.label("`Esc` escape key to get back into the game");
-            ui.label("`Arrow keys` to move player 1");
-            ui.label("`WASD` to move player 2");
-            ui.label("`IJKL` to move player 3");
-            ui.label("`Numpad 8456` to move player 4");
-        });
-    }
+fn how_to_play_wrapper(contexts: EguiContexts) {
+    let _ = how_to_play(contexts);
+}
+
+fn how_to_play(mut contexts: EguiContexts) -> Result<(), ()> {
+    egui::Window::new("How to play").show(contexts.ctx_mut().map_err(|_| ())?, |ui| {
+        ui.label("`Esc` escape key to open the menu");
+        ui.label("`Esc` escape key to get back into the game");
+        ui.label("`Arrow keys` to move player 1");
+        ui.label("`WASD` to move player 2");
+        ui.label("`IJKL` to move player 3");
+        ui.label("`Numpad 8456` to move player 4");
+    });
+    Ok(())
+}
+
+fn selection_wrapper(
+    contexts: EguiContexts,
+    number_of_players_selected: ResMut<NumberOfPlayersSelected>,
+    max_number_of_players: Res<MaxNumberOfPlayers>,
+) {
+    let _ = selection(contexts, number_of_players_selected, max_number_of_players);
 }
 
 fn selection(
     mut contexts: EguiContexts,
     mut number_of_players_selected: ResMut<NumberOfPlayersSelected>,
     max_number_of_players: Res<MaxNumberOfPlayers>,
-) {
-    if let Ok(ctx) = contexts.ctx_mut() {
-        egui::Window::new("Number of players selection").show(ctx, |ui| {
-            ui.heading("Choose");
-            ui.add(
-                egui::Slider::new(
-                    &mut number_of_players_selected.0,
-                    1..=max_number_of_players.0,
-                )
-                .text("Number of players"),
-            );
-            ui.label(format!("{} players selected", number_of_players_selected.0));
-        });
-    }
+) -> Result<(), ()> {
+    egui::Window::new("Number of players selection").show(contexts.ctx_mut().map_err(|_| ())?, |ui| {
+        ui.heading("Choose");
+        ui.add(
+            egui::Slider::new(
+                &mut number_of_players_selected.0,
+                1..=max_number_of_players.0,
+            )
+            .text("Number of players"),
+        );
+        ui.label(format!("{} players selected", number_of_players_selected.0));
+    });
+    Ok(())
 }
 
 #[derive(Resource)]
