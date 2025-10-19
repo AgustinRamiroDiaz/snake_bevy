@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
-use crate::{coordinate::Coordinate, game_state, snake::Snake, Direction, Id};
+use crate::{coordinate::Coordinate, game_state, snake::{Snake, Id}, direction::Direction};
 
 const SNAKE_TICK_SECONDS: f32 = 0.1;
 

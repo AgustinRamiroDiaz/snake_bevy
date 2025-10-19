@@ -45,6 +45,7 @@ impl Plugin for SnakePlugin {
                     .in_set(InGameSet::Last)
                     .run_if(in_state(AppState::InGame)),
             )
+            .add_systems(Update, update_local_coordinates_to_world_transforms)
             .add_systems(
                 OnEnter(AppState::InGame),
                 (despawn_snakes, spawn_snakes).chain(),
@@ -58,11 +59,10 @@ fn setup_grid_and_camera(mut commands: Commands) {
     for x in -HALF_LEN..=HALF_LEN {
         for y in -HALF_LEN..=HALF_LEN {
             grid.push((
-                Sprite {
-                    custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                    color: Color::Srgba(css::DARK_SLATE_GRAY),
-                    ..Default::default()
-                },
+                Sprite::from_color(
+                    Color::Srgba(css::DARK_SLATE_GRAY),
+                    Vec2::new(SIZE, SIZE),
+                ),
                 Coordinate(Vec2::new(x as f32, y as f32)),
                 Depth(-1.0),
             ));
@@ -166,7 +166,7 @@ pub(crate) struct Snake {
 }
 
 #[derive(Component, Debug, PartialEq, Clone)]
-pub(crate) struct Id(pub(crate) u8);
+pub struct Id(pub u8);
 
 #[derive(Component)]
 pub(crate) struct SnakeSegment;
@@ -206,12 +206,12 @@ fn toroid_coordinates(
 pub(crate) struct MyColor(pub(crate) Color);
 
 #[derive(Component)]
-pub(crate) struct Depth(pub(crate) f32);
+pub struct Depth(pub f32);
 
 fn update_local_coordinates_to_world_transforms(
     mut query: Query<
         (&Coordinate, &mut Transform, Option<&Depth>),
-        Or<(Changed<Coordinate>, Changed<Transform>)>,
+        Or<(Changed<Coordinate>, Added<Transform>)>,
     >,
 ) {
     for (coordinate, mut transform, depth) in query.iter_mut() {
@@ -225,10 +225,7 @@ fn add_sprite_bundles(
     mut commands: Commands,
 ) {
     for (entity, color) in query.iter() {
-        commands.entity(entity).insert(Sprite {
-            color: color.0,
-            ..Default::default()
-        });
+        commands.entity(entity).insert(Sprite::from_color(color.0, Vec2::ONE));
     }
 }
 
