@@ -14,8 +14,8 @@ impl Plugin for SnakeMovementPlugin {
             TimerMode::Repeating,
         )))
         .add_plugins(InputManagerPlugin::<Direction>::default())
-        .add_event::<ProposeDirection>()
-        .add_event::<Tick>()
+        .add_message::<ProposeDirection>()
+        .add_message::<Tick>()
         .add_systems(
             Update,
             (
@@ -32,18 +32,19 @@ impl Plugin for SnakeMovementPlugin {
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
-#[derive(Event)]
 pub(crate) struct Tick;
+
+impl bevy::ecs::message::Message for Tick {}
 
 fn tick(
     time: Res<Time>,
     mut timer: ResMut<SnakeTimer>,
     mut query: Query<&mut Snake>,
     mut entity_query: Query<&mut Coordinate>,
-    mut tick: EventWriter<Tick>,
+    mut tick_writer: MessageWriter<Tick>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        tick.send(Tick);
+        tick_writer.write(Tick);
         query
             .iter_mut()
             .flat_map(|mut snake| {
@@ -68,11 +69,12 @@ fn tick(
 
 /// This event proposes a direction for the snake
 /// Then its up to the handler to decide if that direction is valid
-#[derive(Event)]
 pub(crate) struct ProposeDirection {
     pub(crate) id: Id,
     pub(crate) direction: Direction,
 }
+
+impl bevy::ecs::message::Message for ProposeDirection {}
 
 fn add_snake_input_handler(
     mut commands: Commands,
@@ -85,7 +87,7 @@ fn add_snake_input_handler(
     >,
 ) {
     for (entity, snake) in snakes.iter() {
-        if let Some(mut entity) = commands.get_entity(entity) {
+        if let Ok(mut entity) = commands.get_entity(entity) {
             // VIM ordering
             let directions = [
                 Direction::Left,
@@ -117,10 +119,10 @@ fn add_snake_input_handler(
             // You'll also need to add logic to handle the Gamepad Id in the input map below
             let player_gamepad = match snake.player_number.0 {
                 1 => [
-                    vec![GamepadButtonType::DPadLeft],
-                    vec![GamepadButtonType::DPadDown],
-                    vec![GamepadButtonType::DPadUp],
-                    vec![GamepadButtonType::DPadRight],
+                    vec![GamepadButton::DPadLeft],
+                    vec![GamepadButton::DPadDown],
+                    vec![GamepadButton::DPadUp],
+                    vec![GamepadButton::DPadRight],
                 ],
                 2 => [vec![], vec![], vec![], vec![]],
                 3 => [vec![], vec![], vec![], vec![]],
@@ -138,21 +140,24 @@ fn add_snake_input_handler(
                 input_map.insert_one_to_many(direction, player_controls);
             }
 
-            input_map.set_gamepad(Gamepad { id: 0 });
+            // TODO: Query for available gamepads and assign Entity for multiplayer
+            // For now, this will accept input from any connected gamepad
+            // To assign a specific gamepad, query for gamepad entities and use:
+            // input_map.set_gamepad(gamepad_entity);
 
-            entity.insert(InputManagerBundle::<Direction> {
+            entity.insert((
                 // Stores "which actions are currently pressed"
-                action_state: ActionState::default(),
+                ActionState::<Direction>::default(),
                 // Describes how to convert from player inputs into those actions
                 input_map,
-            });
+            ));
         }
     }
 }
 
 fn handle_snake_direction(
     mut snakes: Query<&mut Snake>,
-    mut proposed_direction: EventReader<ProposeDirection>,
+    mut proposed_direction: MessageReader<ProposeDirection>,
 ) {
     for proposed_direction in proposed_direction.read() {
         for mut snake in snakes
@@ -174,7 +179,7 @@ fn handle_snake_direction(
 
 fn input_snake_direction(
     mut query: Query<(&mut Snake, &ActionState<Direction>)>,
-    mut propose_direction: EventWriter<ProposeDirection>,
+    mut propose_direction_writer: MessageWriter<ProposeDirection>,
 ) {
     for (snake, direction) in query.iter_mut().filter(|(snake, _)| !snake.input_blocked) {
         let direction = if direction.just_pressed(&Direction::Left) {
@@ -190,7 +195,7 @@ fn input_snake_direction(
         };
 
         if let Some(direction) = direction {
-            propose_direction.send(ProposeDirection {
+            propose_direction_writer.write(ProposeDirection {
                 id: snake.player_number.clone(),
                 direction,
             });

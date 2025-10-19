@@ -31,7 +31,7 @@ fn go_to_apple(
     players_to_follow: Res<PlayersToFollow>,
     apples: Query<(&Apple, &Coordinate)>,
     coordinates: Query<&Coordinate>,
-    mut propose_direction: EventWriter<ProposeDirection>,
+    mut propose_direction_writer: MessageWriter<ProposeDirection>,
 ) {
     let apples = apples.iter().collect::<Vec<_>>();
     for snake in snakes
@@ -78,7 +78,7 @@ fn go_to_apple(
             .sample(&mut rand::thread_rng())];
 
         if let Some(direction) = direction.to_owned() {
-            propose_direction.send(ProposeDirection {
+            propose_direction_writer.write(ProposeDirection {
                 id: snake.player_number.clone(),
                 direction,
             });

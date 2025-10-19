@@ -15,7 +15,7 @@ impl Plugin for WinPlugin {
             TimerMode::Repeating,
         )))
         .insert_resource(CurrentFirst(None))
-        .add_event::<Won>()
+        .add_message::<Won>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -32,8 +32,9 @@ struct WinnerHoldTimer(Timer);
 struct CurrentFirst(Option<(String, Color)>);
 
 // TODO: should this event get injected from main into this plugin?
-#[derive(Event)]
 pub(crate) struct Won(pub(crate) String);
+
+impl bevy::ecs::message::Message for Won {}
 
 fn set_first(
     snakes: Query<(&Snake, &MyColor), Changed<Snake>>,
@@ -58,16 +59,16 @@ fn set_first(
 }
 
 fn win(
-    mut won: EventWriter<Won>,
     current_winner: Res<CurrentFirst>,
     mut timer: ResMut<WinnerHoldTimer>,
     time: Res<Time>,
+    mut won_writer: MessageWriter<Won>,
 ) {
     timer.0.tick(time.delta());
 
     if let Some((name, _)) = &current_winner.0 {
         if timer.0.just_finished() {
-            won.send(Won(name.clone()));
+            won_writer.write(Won(name.clone()));
         }
     } else {
         timer.0.reset();
@@ -79,43 +80,39 @@ struct TimerText;
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        // Create a TextBundle that has a Text with a single section.
-        TextBundle::from_section(
-            "",
-            TextStyle {
-                font_size: 60.0,
-                ..default()
-            },
-        ) // Set the alignment of the Text
-        .with_text_justify(JustifyText::Center)
-        // Set the style of the TextBundle itself.
-        .with_style(Style {
+        Text::new(""),
+        TextFont {
+            font_size: 60.0,
+            ..default()
+        },
+        TextLayout::new_with_justify(Justify::Center),
+        Node {
             position_type: PositionType::Absolute,
             top: Val::Px(5.0),
             right: Val::Px(5.0),
             ..default()
-        }),
+        },
         TimerText,
     ));
 }
 
 fn update_timer_text(
-    mut query: Query<(&mut Text, &TimerText)>,
+    mut query: Query<(&mut Text, &mut TextColor), With<TimerText>>,
     timer: Res<WinnerHoldTimer>,
     current_winner: Res<CurrentFirst>,
 ) {
     if let Some((name, color)) = &current_winner.0 {
-        for (mut text, _) in query.iter_mut() {
-            text.sections[0].value = format!(
+        for (mut text, mut text_color) in query.iter_mut() {
+            **text = format!(
                 "{} wins in {:.2}",
                 name,
                 timer.0.duration().as_secs_f32() - timer.0.elapsed_secs()
             );
-            text.sections[0].style.color = color.clone();
+            text_color.0 = *color;
         }
     } else {
         for (mut text, _) in query.iter_mut() {
-            text.sections[0].value = "".to_string();
+            **text = String::new();
         }
     }
 }

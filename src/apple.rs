@@ -16,7 +16,7 @@ pub(crate) struct ApplePlugin;
 
 impl Plugin for ApplePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<AppleEaten>()
+        app.add_message::<AppleEaten>()
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
@@ -42,10 +42,7 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
-        SpriteBundle {
-            texture: assets.apple.clone(),
-            ..default()
-        },
+        Sprite::from_image(assets.apple.clone()),
         Tile,
     ));
 }
@@ -53,8 +50,9 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
 #[derive(Component)]
 pub(crate) struct Apple;
 
-#[derive(Event)]
 pub(crate) struct AppleEaten(pub(crate) Entity);
+
+impl bevy::ecs::message::Message for AppleEaten {}
 
 fn eat_apple(
     mut commands: Commands,
@@ -62,7 +60,7 @@ fn eat_apple(
     coordinates: Query<&Coordinate>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
     assets: Res<SceneAssets>,
-    mut apple_eaten: EventWriter<AppleEaten>,
+    mut apple_eaten_writer: MessageWriter<AppleEaten>,
 ) {
     let get_head = |snake: &Snake| {
         let &head = snake.segments.front()?;
@@ -75,7 +73,7 @@ fn eat_apple(
                 // The despawn and spawn could be handled by events, but that would require configuring ordering in order to make sure we don't get to an inconsistent state. https://bevy-cheatbook.github.io/programming/events.html#possible-pitfalls
                 commands.entity(apple).despawn();
                 spawn_apple(&mut commands, &assets);
-                apple_eaten.send(AppleEaten(entity));
+                apple_eaten_writer.write(AppleEaten(entity));
                 return;
             }
         }

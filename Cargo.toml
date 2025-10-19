@@ -6,10 +6,28 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.14.1"
+bevy = { version = "0.17.2", default-features = false, features = [
+    "bevy_audio",
+    "bevy_animation",
+    "bevy_asset",
+    "bevy_gltf",
+    "bevy_pbr",
+    "bevy_render",
+    "bevy_scene",
+    "bevy_sprite",
+    "bevy_state",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_winit",
+    "multi_threaded",
+    "png",
+    "vorbis",
+    "x11",
+    "webgl2",
+] }
 rand = "0.8.5"
-bevy_egui = "0.29"
-leafwing-input-manager = { git = "https://github.com/Leafwing-Studios/leafwing-input-manager", rev = "c15d0e6" } # TODO: hotfix while https://github.com/Leafwing-Studios/leafwing-input-manager/issues/602 is not released. We need to move to the new release once it's out.
+bevy_egui = "0.37"
+leafwing-input-manager = "0.18"
 
 
 # Enable a small amount of optimization in debug mode

@@ -21,7 +21,7 @@ impl Plugin for SchedulePlugin {
         )
         .add_systems(
             Update,
-            apply_deferred
+            ApplyDeferred
                 .after(InGameSet::SpawnDespawnEntities)
                 .before(InGameSet::Last),
         );

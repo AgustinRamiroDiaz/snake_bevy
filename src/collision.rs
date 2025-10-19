@@ -13,9 +13,9 @@ pub(crate) struct CollisionPlugin;
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(BlinkPlugin)
-            .add_event::<Collision>()
-            .add_event::<RemoveChunks>()
-            .add_event::<SetInmortal>()
+            .add_message::<Collision>()
+            .add_message::<RemoveChunks>()
+            .add_message::<SetInmortal>()
             .add_systems(
                 Update,
                 (
@@ -33,15 +33,16 @@ impl Plugin for CollisionPlugin {
 const INMORTAL_TICKS: u8 = 10;
 const PROPORTION_LOST_PER_HIT: f32 = 0.3;
 
-#[derive(Event)]
 /// Represents the snake entity that has hit its head against something
 struct Collision(Entity);
+
+impl bevy::ecs::message::Message for Collision {}
 
 fn collision_detection(
     mut snake_query: Query<(Entity, &mut Snake)>,
     query: Query<&Coordinate>,
     changed_coordinates: Query<Entity, Changed<Coordinate>>,
-    mut collision: EventWriter<Collision>,
+    mut collision_writer: MessageWriter<Collision>,
 ) {
     if changed_coordinates.iter().count() == 0 {
         // This is an efficiency hack to just evaluate collisions when the state has changed
@@ -84,28 +85,29 @@ fn collision_detection(
                 .filter(|(e, _)| *e != entity)
                 .any(|(_, c)| *c == head_coordinate)
         {
-            collision.send(Collision(entity));
+            collision_writer.write(Collision(entity));
         }
     }
 }
 
 fn collision_handling(
-    mut collision: EventReader<Collision>,
-    mut remove_chunks: EventWriter<RemoveChunks>,
-    mut set_inmortal: EventWriter<SetInmortal>,
+    mut collision: MessageReader<Collision>,
+    mut remove_chunks_writer: MessageWriter<RemoveChunks>,
+    mut set_inmortal_writer: MessageWriter<SetInmortal>,
 ) {
-    for &Collision(entity) in collision.read() {
-        remove_chunks.send(RemoveChunks(entity));
-        set_inmortal.send(SetInmortal(entity));
+    for Collision(entity) in collision.read() {
+        remove_chunks_writer.write(RemoveChunks(*entity));
+        set_inmortal_writer.write(SetInmortal(*entity));
     }
 }
 
-#[derive(Event)]
 struct RemoveChunks(Entity);
+
+impl bevy::ecs::message::Message for RemoveChunks {}
 
 fn remove_chunks(
     mut commands: Commands,
-    mut event_reader: EventReader<RemoveChunks>,
+    mut event_reader: MessageReader<RemoveChunks>,
     mut query: Query<(Entity, &mut Snake)>,
 ) {
     for RemoveChunks(entity) in event_reader.read() {
@@ -116,23 +118,24 @@ fn remove_chunks(
             );
             for _ in 0..chunks_to_remove {
                 if let Some(entity) = snake.segments.pop_back() {
-                    commands.entity(entity).despawn_recursive();
+                    commands.entity(entity).despawn();
                 }
             }
         }
     }
 }
 
-#[derive(Event)]
 struct SetInmortal(Entity);
+
+impl bevy::ecs::message::Message for SetInmortal {}
 
 fn set_inmortal(
     mut commands: Commands,
-    mut event_reader: EventReader<SetInmortal>,
+    mut event_reader: MessageReader<SetInmortal>,
     mut query: Query<&mut Snake>,
 ) {
-    for &SetInmortal(entity) in event_reader.read() {
-        if let Ok(mut snake) = query.get_mut(entity) {
+    for SetInmortal(entity) in event_reader.read() {
+        if let Ok(mut snake) = query.get_mut(*entity) {
             snake.inmortal_ticks = INMORTAL_TICKS;
             // TODO: how can we decouple the blinking from the inmortality?
             for &segment in snake.segments.iter() {
@@ -145,7 +148,7 @@ fn set_inmortal(
 fn update_inmortal_ticks(
     mut commands: Commands,
     mut query: Query<&mut Snake>,
-    mut tick: EventReader<Tick>,
+    mut tick: MessageReader<Tick>,
 ) {
     for _ in tick.read() {
         for mut snake in query.iter_mut() {

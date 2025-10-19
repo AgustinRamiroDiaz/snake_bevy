@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::{color::palettes::css, prelude::*};
+use bevy::{camera::ScalingMode, color::palettes::css, prelude::*};
 
 use crate::{
     apple::AppleEaten, coordinate::Coordinate, direction::Direction, game_state::AppState,
@@ -17,16 +17,31 @@ impl Plugin for SnakePlugin {
         app.add_systems(Startup, setup_grid_and_camera)
             .add_systems(
                 Update,
-                (
-                    grow_snake,
-                    apply_deferred,
-                    toroid_coordinates,
-                    add_sprite_bundles,
-                    apply_deferred, // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
-                    set_sprite_size,
-                    update_local_coordinates_to_world_transforms,
-                )
-                    .chain()
+                grow_snake
+                    .in_set(InGameSet::Last)
+                    .run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                toroid_coordinates
+                    .in_set(InGameSet::Last)
+                    .run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                add_sprite_bundles
+                    .in_set(InGameSet::Last)
+                    .run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                set_sprite_size
+                    .in_set(InGameSet::Last)
+                    .run_if(in_state(AppState::InGame)),
+            )
+            .add_systems(
+                Update,
+                update_local_coordinates_to_world_transforms
                     .in_set(InGameSet::Last)
                     .run_if(in_state(AppState::InGame)),
             )
@@ -43,12 +58,9 @@ fn setup_grid_and_camera(mut commands: Commands) {
     for x in -HALF_LEN..=HALF_LEN {
         for y in -HALF_LEN..=HALF_LEN {
             grid.push((
-                SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                        color: Color::Srgba(css::DARK_SLATE_GRAY),
-                        ..Default::default()
-                    },
+                Sprite {
+                    custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                    color: Color::Srgba(css::DARK_SLATE_GRAY),
                     ..Default::default()
                 },
                 Coordinate(Vec2::new(x as f32, y as f32)),
@@ -58,18 +70,18 @@ fn setup_grid_and_camera(mut commands: Commands) {
     }
     commands.spawn_batch(grid);
 
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
+    commands.spawn((
+        Camera2d::default(),
+        Projection::Orthographic(OrthographicProjection {
             far: 1000.,
             near: -1000.,
-            scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
-                min_width: BOARD_VIEWPORT_IN_WORLD_UNITS,
-                min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
+            scaling_mode: ScalingMode::Fixed {
+                width: BOARD_VIEWPORT_IN_WORLD_UNITS,
+                height: BOARD_VIEWPORT_IN_WORLD_UNITS,
             },
-            ..Default::default()
-        },
-        ..default()
-    });
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }
 
 fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>) {
@@ -137,8 +149,8 @@ fn despawn_snakes(mut commands: Commands, snakes: Query<(Entity, &Snake)>) {
         snake
             .segments
             .iter()
-            .for_each(|&entity| commands.entity(entity).despawn_recursive());
-        commands.entity(entity).despawn_recursive();
+            .for_each(|&entity| commands.entity(entity).despawn());
+        commands.entity(entity).despawn();
     });
 }
 
@@ -162,7 +174,7 @@ pub(crate) struct SnakeSegment;
 fn grow_snake(
     mut commands: Commands,
     mut query: Query<(&mut Snake, &MyColor)>,
-    mut apple_eaten: EventReader<AppleEaten>,
+    mut apple_eaten: MessageReader<AppleEaten>,
 ) {
     for AppleEaten(entity) in apple_eaten.read() {
         if let Ok((mut snake, &color)) = query.get_mut(*entity) {
@@ -213,12 +225,8 @@ fn add_sprite_bundles(
     mut commands: Commands,
 ) {
     for (entity, color) in query.iter() {
-        commands.entity(entity).insert(SpriteBundle {
-            sprite: Sprite {
-                color: color.0,
-                ..Default::default()
-            },
-
+        commands.entity(entity).insert(Sprite {
+            color: color.0,
             ..Default::default()
         });
     }

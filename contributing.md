@@ -12,9 +12,10 @@ cargo run
 
 # Running with trunk
 
-You can also use trunk to run the game on web. This will automatically reload the game when you make changes.
+You can also use [trunk](https://trunkrs.dev/#install) to run the game on web. This will automatically reload the game when you make changes.
 
 ```
 cargo install trunk
+rustup target add wasm32-unknown-unknown
 trunk serve
 ```
