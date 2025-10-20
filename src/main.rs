@@ -1,5 +1,5 @@
 #[cfg(not(target_arch = "wasm32"))]
-use bevy::window::WindowMode;
+use bevy::window::{MonitorSelection, WindowMode};
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use movement::ProposeDirection;
 
@@ -66,7 +66,7 @@ fn main() {
                 primary_window: Some(Window {
                     // Borderless looks distorted when running in the web
                     #[cfg(not(target_arch = "wasm32"))]
-                    mode: WindowMode::BorderlessFullscreen,
+                    mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
                     fit_canvas_to_parent: true,
                     prevent_default_event_handling: false,
                     resizable: true,

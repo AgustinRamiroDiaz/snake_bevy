@@ -43,12 +43,9 @@ fn setup_grid_and_camera(mut commands: Commands) {
     for x in -HALF_LEN..=HALF_LEN {
         for y in -HALF_LEN..=HALF_LEN {
             grid.push((
-                SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
-                        color: Color::Srgba(css::DARK_SLATE_GRAY),
-                        ..Default::default()
-                    },
+                Sprite {
+                    custom_size: Some(Vec2 { x: SIZE, y: SIZE }),
+                    color: Color::Srgba(css::DARK_SLATE_GRAY),
                     ..Default::default()
                 },
                 Coordinate(Vec2::new(x as f32, y as f32)),
@@ -58,18 +55,18 @@ fn setup_grid_and_camera(mut commands: Commands) {
     }
     commands.spawn_batch(grid);
 
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
+    commands.spawn((
+        Camera2d,
+        OrthographicProjection {
             far: 1000.,
             near: -1000.,
             scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
                 min_width: BOARD_VIEWPORT_IN_WORLD_UNITS,
                 min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
             },
-            ..Default::default()
+            ..OrthographicProjection::default_2d()
         },
-        ..default()
-    });
+    ));
 }
 
 fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSelected>) {
@@ -207,18 +204,14 @@ fn update_local_coordinates_to_world_transforms(
     }
 }
 
-// TODO: we assume that Transform == SpriteBundle
+// TODO: we assume that Transform == Sprite
 fn add_sprite_bundles(
     query: Query<(Entity, &MyColor), (Changed<Coordinate>, Without<Transform>)>,
     mut commands: Commands,
 ) {
     for (entity, color) in query.iter() {
-        commands.entity(entity).insert(SpriteBundle {
-            sprite: Sprite {
-                color: color.0,
-                ..Default::default()
-            },
-
+        commands.entity(entity).insert(Sprite {
+            color: color.0,
             ..Default::default()
         });
     }

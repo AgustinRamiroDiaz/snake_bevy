@@ -4,7 +4,7 @@ use crate::win::Won;
 
 use super::game_state::AppState;
 
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 pub(crate) struct MainMenu {
     pub(crate) max_number_of_players: usize,
@@ -21,33 +21,37 @@ impl Plugin for MainMenu {
     }
 }
 
-fn how_to_play(mut contexts: EguiContexts) {
-    egui::Window::new("How to play").show(contexts.ctx_mut(), |ui| {
-        ui.label("`Esc` escape key to open the menu");
-        ui.label("`Esc` escape key to get back into the game");
-        ui.label("`Arrow keys` to move player 1");
-        ui.label("`WASD` to move player 2");
-        ui.label("`IJKL` to move player 3");
-        ui.label("`Numpad 8456` to move player 4");
-    });
+fn how_to_play(mut contexts: Query<&mut EguiContext>) {
+    for mut ctx in contexts.iter_mut() {
+        egui::Window::new("How to play").show(ctx.get_mut(), |ui| {
+            ui.label("`Esc` escape key to open the menu");
+            ui.label("`Esc` escape key to get back into the game");
+            ui.label("`Arrow keys` to move player 1");
+            ui.label("`WASD` to move player 2");
+            ui.label("`IJKL` to move player 3");
+            ui.label("`Numpad 8456` to move player 4");
+        });
+    }
 }
 
 fn selection(
-    mut contexts: EguiContexts,
+    mut contexts: Query<&mut EguiContext>,
     mut number_of_players_selected: ResMut<NumberOfPlayersSelected>,
     max_number_of_players: Res<MaxNumberOfPlayers>,
 ) {
-    egui::Window::new("Number of players selection").show(contexts.ctx_mut(), |ui| {
-        ui.heading("Choose");
-        ui.add(
-            egui::Slider::new(
-                &mut number_of_players_selected.0,
-                1..=max_number_of_players.0,
-            )
-            .text("Number of players"),
-        );
-        ui.label(format!("{} players selected", number_of_players_selected.0));
-    });
+    for mut ctx in contexts.iter_mut() {
+        egui::Window::new("Number of players selection").show(ctx.get_mut(), |ui| {
+            ui.heading("Choose");
+            ui.add(
+                egui::Slider::new(
+                    &mut number_of_players_selected.0,
+                    1..=max_number_of_players.0,
+                )
+                .text("Number of players"),
+            );
+            ui.label(format!("{} players selected", number_of_players_selected.0));
+        });
+    }
 }
 
 #[derive(Resource)]
@@ -70,22 +74,18 @@ fn winner_text(
 
     for event in event_reader.read() {
         commands.spawn((
-            // Create a TextBundle that has a Text with a single section.
-            TextBundle::from_section(
-                format!("Player {} won", event.0),
-                TextStyle {
-                    font_size: 100.0,
-                    ..default()
-                },
-            ) // Set the alignment of the Text
-            .with_text_justify(JustifyText::Center)
-            // Set the style of the TextBundle itself.
-            .with_style(Style {
+            Text::new(format!("Player {} won", event.0)),
+            TextFont {
+                font_size: 100.0,
+                ..default()
+            },
+            TextLayout::new_with_justify(JustifyText::Center),
+            Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(5.0),
                 right: Val::Px(5.0),
                 ..default()
-            }),
+            },
             WinnerText,
         ));
     }

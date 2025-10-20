@@ -42,8 +42,8 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
             rand::thread_rng().gen_range(-HALF_LEN..HALF_LEN) as f32,
         )),
-        SpriteBundle {
-            texture: assets.apple.clone(),
+        Sprite {
+            image: assets.apple.clone(),
             ..default()
         },
         Tile,

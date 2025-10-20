@@ -117,10 +117,10 @@ fn add_snake_input_handler(
             // You'll also need to add logic to handle the Gamepad Id in the input map below
             let player_gamepad = match snake.player_number.0 {
                 1 => [
-                    vec![GamepadButtonType::DPadLeft],
-                    vec![GamepadButtonType::DPadDown],
-                    vec![GamepadButtonType::DPadUp],
-                    vec![GamepadButtonType::DPadRight],
+                    vec![GamepadButton::DPadLeft],
+                    vec![GamepadButton::DPadDown],
+                    vec![GamepadButton::DPadUp],
+                    vec![GamepadButton::DPadRight],
                 ],
                 2 => [vec![], vec![], vec![], vec![]],
                 3 => [vec![], vec![], vec![], vec![]],
@@ -138,7 +138,9 @@ fn add_snake_input_handler(
                 input_map.insert_one_to_many(direction, player_controls);
             }
 
-            input_map.set_gamepad(Gamepad { id: 0 });
+            // Note: In Bevy 0.15, Gamepad uses Entity-based IDs.
+            // leafwing-input-manager 0.16 handles this automatically, so we don't need to set a gamepad here.
+            // The input map will work with the first connected gamepad by default.
 
             entity.insert(InputManagerBundle::<Direction> {
                 // Stores "which actions are currently pressed"

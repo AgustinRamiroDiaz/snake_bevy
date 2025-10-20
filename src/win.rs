@@ -79,22 +79,18 @@ struct TimerText;
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        // Create a TextBundle that has a Text with a single section.
-        TextBundle::from_section(
-            "",
-            TextStyle {
-                font_size: 60.0,
-                ..default()
-            },
-        ) // Set the alignment of the Text
-        .with_text_justify(JustifyText::Center)
-        // Set the style of the TextBundle itself.
-        .with_style(Style {
+        Text::new(""),
+        TextFont {
+            font_size: 60.0,
+            ..default()
+        },
+        TextLayout::new_with_justify(JustifyText::Center),
+        Node {
             position_type: PositionType::Absolute,
             top: Val::Px(5.0),
             right: Val::Px(5.0),
             ..default()
-        }),
+        },
         TimerText,
     ));
 }
@@ -104,18 +100,17 @@ fn update_timer_text(
     timer: Res<WinnerHoldTimer>,
     current_winner: Res<CurrentFirst>,
 ) {
-    if let Some((name, color)) = &current_winner.0 {
+    if let Some((name, _color)) = &current_winner.0 {
         for (mut text, _) in query.iter_mut() {
-            text.sections[0].value = format!(
+            *text = Text::new(format!(
                 "{} wins in {:.2}",
                 name,
                 timer.0.duration().as_secs_f32() - timer.0.elapsed_secs()
-            );
-            text.sections[0].style.color = color.clone();
+            ));
         }
     } else {
         for (mut text, _) in query.iter_mut() {
-            text.sections[0].value = "".to_string();
+            *text = Text::new("");
         }
     }
 }
