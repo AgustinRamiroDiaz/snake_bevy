@@ -37,7 +37,7 @@ fn go_to_apple(
     for snake in snakes
         .iter_mut()
         .filter(|s| players_to_follow.0.contains(&s.player_number))
-        .filter(|snake| !snake.input_blocked)
+        .filter(|snake| snake.next_directions.len() < 1)
     {
         // TODO: picking random apples doesn't work because in each iteration the snake will pick a different apple
         // We need to either pick the closest apple or make sure that the snake doesn't change its mind

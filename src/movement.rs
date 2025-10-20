@@ -47,7 +47,11 @@ fn tick(
         query
             .iter_mut()
             .flat_map(|mut snake| {
-                snake.input_blocked = false;
+                // Pop and apply the next queued direction if available
+                if let Some(next_direction) = snake.next_directions.pop_front() {
+                    snake.direction = next_direction;
+                }
+
                 let &tail_entity = snake.segments.back()?;
                 let &head_entity = snake.segments.front()?;
 
@@ -162,16 +166,30 @@ fn handle_snake_direction(
         for mut snake in snakes
             .iter_mut()
             .filter(|snake| snake.player_number == proposed_direction.id)
-            .filter(|snake| !snake.input_blocked)
         {
-            if snake.direction == !proposed_direction.direction {
+            // Don't accept more directions if queue is full (limit to 2)
+            if snake.next_directions.len() >= 2 {
                 return;
             }
-            if snake.direction == proposed_direction.direction {
+
+            // Validate against the effective current direction
+            // (last queued direction, or current direction if queue is empty)
+            let effective_direction = snake
+                .next_directions
+                .back()
+                .unwrap_or(&snake.direction);
+
+            // Don't allow reversing direction
+            if *effective_direction == !proposed_direction.direction {
                 return;
             }
-            snake.direction = proposed_direction.direction;
-            snake.input_blocked = true;
+            // Don't allow same direction
+            if *effective_direction == proposed_direction.direction {
+                return;
+            }
+
+            // Add to queue
+            snake.next_directions.push_back(proposed_direction.direction);
         }
     }
 }
@@ -180,7 +198,7 @@ fn input_snake_direction(
     mut query: Query<(&mut Snake, &ActionState<Direction>)>,
     mut propose_direction: MessageWriter<ProposeDirection>,
 ) {
-    for (snake, direction) in query.iter_mut().filter(|(snake, _)| !snake.input_blocked) {
+    for (snake, direction) in query.iter_mut().filter(|(snake, _)| snake.next_directions.len() < 2) {
         let direction = if direction.just_pressed(&Direction::Left) {
             Some(Direction::Left)
         } else if direction.just_pressed(&Direction::Right) {

@@ -82,7 +82,7 @@ fn spawn_snakes(mut commands: Commands, number_of_players: Res<NumberOfPlayersSe
                     player_number: id,
                     direction: direction.clone(),
                     trail: Coordinate(spawn_coord.0 - <Direction as Into<Vec2>>::into(direction)),
-                    input_blocked: false,
+                    next_directions: VecDeque::new(),
                     inmortal_ticks: 0,
                     name,
                 },
@@ -146,7 +146,7 @@ pub(crate) struct Snake {
     pub(crate) direction: Direction,
     pub(crate) player_number: Id,
     pub(crate) trail: Coordinate,
-    pub(crate) input_blocked: bool, // TODO: is it reasonable to move this into its own component given that we filter by it?
+    pub(crate) next_directions: VecDeque<Direction>,
     pub(crate) inmortal_ticks: u8,
 }
 
