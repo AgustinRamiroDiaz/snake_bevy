@@ -11,6 +11,9 @@ rand = "0.8.5"
 bevy_egui = "0.38"
 leafwing-input-manager = "0.18"
 
+# WASM-specific dependencies
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
