@@ -13,9 +13,9 @@ pub(crate) struct CollisionPlugin;
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(BlinkPlugin)
-            .add_event::<Collision>()
-            .add_event::<RemoveChunks>()
-            .add_event::<SetInmortal>()
+            .add_message::<Collision>()
+            .add_message::<RemoveChunks>()
+            .add_message::<SetInmortal>()
             .add_systems(
                 Update,
                 (
@@ -33,7 +33,7 @@ impl Plugin for CollisionPlugin {
 const INMORTAL_TICKS: u8 = 10;
 const PROPORTION_LOST_PER_HIT: f32 = 0.3;
 
-#[derive(Event)]
+#[derive(Message)]
 /// Represents the snake entity that has hit its head against something
 struct Collision(Entity);
 
@@ -41,7 +41,7 @@ fn collision_detection(
     mut snake_query: Query<(Entity, &mut Snake)>,
     query: Query<&Coordinate>,
     changed_coordinates: Query<Entity, Changed<Coordinate>>,
-    mut collision: EventWriter<Collision>,
+    mut collision: MessageWriter<Collision>,
 ) {
     if changed_coordinates.iter().count() == 0 {
         // This is an efficiency hack to just evaluate collisions when the state has changed
@@ -90,9 +90,9 @@ fn collision_detection(
 }
 
 fn collision_handling(
-    mut collision: EventReader<Collision>,
-    mut remove_chunks: EventWriter<RemoveChunks>,
-    mut set_inmortal: EventWriter<SetInmortal>,
+    mut collision: MessageReader<Collision>,
+    mut remove_chunks: MessageWriter<RemoveChunks>,
+    mut set_inmortal: MessageWriter<SetInmortal>,
 ) {
     for &Collision(entity) in collision.read() {
         remove_chunks.write(RemoveChunks(entity));
@@ -100,12 +100,12 @@ fn collision_handling(
     }
 }
 
-#[derive(Event)]
+#[derive(Message)]
 struct RemoveChunks(Entity);
 
 fn remove_chunks(
     mut commands: Commands,
-    mut event_reader: EventReader<RemoveChunks>,
+    mut event_reader: MessageReader<RemoveChunks>,
     mut query: Query<(Entity, &mut Snake)>,
 ) {
     for RemoveChunks(entity) in event_reader.read() {
@@ -123,12 +123,12 @@ fn remove_chunks(
     }
 }
 
-#[derive(Event)]
+#[derive(Message)]
 struct SetInmortal(Entity);
 
 fn set_inmortal(
     mut commands: Commands,
-    mut event_reader: EventReader<SetInmortal>,
+    mut event_reader: MessageReader<SetInmortal>,
     mut query: Query<&mut Snake>,
 ) {
     for &SetInmortal(entity) in event_reader.read() {
@@ -145,7 +145,7 @@ fn set_inmortal(
 fn update_inmortal_ticks(
     mut commands: Commands,
     mut query: Query<&mut Snake>,
-    mut tick: EventReader<Tick>,
+    mut tick: MessageReader<Tick>,
 ) {
     for _ in tick.read() {
         for mut snake in query.iter_mut() {

@@ -16,7 +16,7 @@ pub(crate) struct ApplePlugin;
 
 impl Plugin for ApplePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<AppleEaten>()
+        app.add_message::<AppleEaten>()
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
@@ -53,7 +53,7 @@ fn spawn_apple(commands: &mut Commands, assets: &Res<SceneAssets>) {
 #[derive(Component)]
 pub(crate) struct Apple;
 
-#[derive(Event)]
+#[derive(Message)]
 pub(crate) struct AppleEaten(pub(crate) Entity);
 
 fn eat_apple(
@@ -62,7 +62,7 @@ fn eat_apple(
     coordinates: Query<&Coordinate>,
     apples: Query<(Entity, &Coordinate), With<Apple>>,
     assets: Res<SceneAssets>,
-    mut apple_eaten: EventWriter<AppleEaten>,
+    mut apple_eaten: MessageWriter<AppleEaten>,
 ) {
     let get_head = |snake: &Snake| {
         let &head = snake.segments.front()?;

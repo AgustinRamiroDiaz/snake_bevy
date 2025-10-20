@@ -14,8 +14,8 @@ impl Plugin for SnakeMovementPlugin {
             TimerMode::Repeating,
         )))
         .add_plugins(InputManagerPlugin::<Direction>::default())
-        .add_event::<ProposeDirection>()
-        .add_event::<Tick>()
+        .add_message::<ProposeDirection>()
+        .add_message::<Tick>()
         .add_systems(
             Update,
             (
@@ -32,7 +32,7 @@ impl Plugin for SnakeMovementPlugin {
 #[derive(Resource)]
 struct SnakeTimer(Timer);
 
-#[derive(Event)]
+#[derive(Message)]
 pub(crate) struct Tick;
 
 fn tick(
@@ -40,7 +40,7 @@ fn tick(
     mut timer: ResMut<SnakeTimer>,
     mut query: Query<&mut Snake>,
     mut entity_query: Query<&mut Coordinate>,
-    mut tick: EventWriter<Tick>,
+    mut tick: MessageWriter<Tick>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         tick.write(Tick);
@@ -68,7 +68,7 @@ fn tick(
 
 /// This event proposes a direction for the snake
 /// Then its up to the handler to decide if that direction is valid
-#[derive(Event)]
+#[derive(Message)]
 pub(crate) struct ProposeDirection {
     pub(crate) id: Id,
     pub(crate) direction: Direction,
@@ -156,7 +156,7 @@ fn add_snake_input_handler(
 
 fn handle_snake_direction(
     mut snakes: Query<&mut Snake>,
-    mut proposed_direction: EventReader<ProposeDirection>,
+    mut proposed_direction: MessageReader<ProposeDirection>,
 ) {
     for proposed_direction in proposed_direction.read() {
         for mut snake in snakes
@@ -178,7 +178,7 @@ fn handle_snake_direction(
 
 fn input_snake_direction(
     mut query: Query<(&mut Snake, &ActionState<Direction>)>,
-    mut propose_direction: EventWriter<ProposeDirection>,
+    mut propose_direction: MessageWriter<ProposeDirection>,
 ) {
     for (snake, direction) in query.iter_mut().filter(|(snake, _)| !snake.input_blocked) {
         let direction = if direction.just_pressed(&Direction::Left) {

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::{color::palettes::css, prelude::*};
+use bevy::{camera::ScalingMode, color::palettes::css, prelude::*};
 
 use crate::{
     apple::AppleEaten, coordinate::Coordinate, direction::Direction, game_state::AppState,
@@ -60,7 +60,7 @@ fn setup_grid_and_camera(mut commands: Commands) {
         Projection::Orthographic(OrthographicProjection {
             far: 1000.,
             near: -1000.,
-            scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
+            scaling_mode: ScalingMode::AutoMin {
                 min_width: BOARD_VIEWPORT_IN_WORLD_UNITS,
                 min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
             },
@@ -159,7 +159,7 @@ pub(crate) struct SnakeSegment;
 fn grow_snake(
     mut commands: Commands,
     mut query: Query<(&mut Snake, &MyColor)>,
-    mut apple_eaten: EventReader<AppleEaten>,
+    mut apple_eaten: MessageReader<AppleEaten>,
 ) {
     for AppleEaten(entity) in apple_eaten.read() {
         if let Ok((mut snake, &color)) = query.get_mut(*entity) {

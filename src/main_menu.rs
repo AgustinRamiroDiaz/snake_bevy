@@ -70,7 +70,7 @@ struct WinnerText;
 
 fn winner_text(
     mut commands: Commands,
-    mut event_reader: EventReader<Won>,
+    mut event_reader: MessageReader<Won>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
     if !event_reader.is_empty() {
@@ -84,7 +84,7 @@ fn winner_text(
                 font_size: 100.0,
                 ..default()
             },
-            TextLayout::new_with_justify(JustifyText::Center),
+            TextLayout::new_with_justify(Justify::Center),
             Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(5.0),

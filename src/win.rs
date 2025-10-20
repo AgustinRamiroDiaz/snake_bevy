@@ -15,7 +15,7 @@ impl Plugin for WinPlugin {
             TimerMode::Repeating,
         )))
         .insert_resource(CurrentFirst(None))
-        .add_event::<Won>()
+        .add_message::<Won>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -32,7 +32,7 @@ struct WinnerHoldTimer(Timer);
 struct CurrentFirst(Option<(String, Color)>);
 
 // TODO: should this event get injected from main into this plugin?
-#[derive(Event)]
+#[derive(Message)]
 pub(crate) struct Won(pub(crate) String);
 
 fn set_first(
@@ -58,7 +58,7 @@ fn set_first(
 }
 
 fn win(
-    mut won: EventWriter<Won>,
+    mut won: MessageWriter<Won>,
     current_winner: Res<CurrentFirst>,
     mut timer: ResMut<WinnerHoldTimer>,
     time: Res<Time>,
@@ -84,7 +84,7 @@ fn setup(mut commands: Commands) {
             font_size: 60.0,
             ..default()
         },
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(Justify::Center),
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(5.0),

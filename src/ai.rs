@@ -31,7 +31,7 @@ fn go_to_apple(
     players_to_follow: Res<PlayersToFollow>,
     apples: Query<(&Apple, &Coordinate)>,
     coordinates: Query<&Coordinate>,
-    mut propose_direction: EventWriter<ProposeDirection>,
+    mut propose_direction: MessageWriter<ProposeDirection>,
 ) {
     let apples = apples.iter().collect::<Vec<_>>();
     for snake in snakes
