@@ -84,7 +84,7 @@ fn collision_detection(
                 .filter(|(e, _)| *e != entity)
                 .any(|(_, c)| *c == head_coordinate)
         {
-            collision.send(Collision(entity));
+            collision.write(Collision(entity));
         }
     }
 }
@@ -95,8 +95,8 @@ fn collision_handling(
     mut set_inmortal: EventWriter<SetInmortal>,
 ) {
     for &Collision(entity) in collision.read() {
-        remove_chunks.send(RemoveChunks(entity));
-        set_inmortal.send(SetInmortal(entity));
+        remove_chunks.write(RemoveChunks(entity));
+        set_inmortal.write(SetInmortal(entity));
     }
 }
 
@@ -116,7 +116,7 @@ fn remove_chunks(
             );
             for _ in 0..chunks_to_remove {
                 if let Some(entity) = snake.segments.pop_back() {
-                    commands.entity(entity).despawn_recursive();
+                    commands.entity(entity).despawn();
                 }
             }
         }

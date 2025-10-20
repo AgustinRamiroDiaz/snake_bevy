@@ -78,7 +78,7 @@ fn go_to_apple(
             .sample(&mut rand::thread_rng())];
 
         if let Some(direction) = direction.to_owned() {
-            propose_direction.send(ProposeDirection {
+            propose_direction.write(ProposeDirection {
                 id: snake.player_number.clone(),
                 direction,
             });

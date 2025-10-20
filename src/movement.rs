@@ -43,7 +43,7 @@ fn tick(
     mut tick: EventWriter<Tick>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        tick.send(Tick);
+        tick.write(Tick);
         query
             .iter_mut()
             .flat_map(|mut snake| {
@@ -85,7 +85,10 @@ fn add_snake_input_handler(
     >,
 ) {
     for (entity, snake) in snakes.iter() {
-        if let Some(mut entity) = commands.get_entity(entity) {
+        let Ok(mut entity) = commands.get_entity(entity) else {
+            continue;
+        };
+        {
             // VIM ordering
             let directions = [
                 Direction::Left,
@@ -142,12 +145,11 @@ fn add_snake_input_handler(
             // leafwing-input-manager 0.16 handles this automatically, so we don't need to set a gamepad here.
             // The input map will work with the first connected gamepad by default.
 
-            entity.insert(InputManagerBundle::<Direction> {
-                // Stores "which actions are currently pressed"
-                action_state: ActionState::default(),
-                // Describes how to convert from player inputs into those actions
+            // In Bevy 0.16, insert InputMap and ActionState directly instead of using InputManagerBundle
+            entity.insert((
                 input_map,
-            });
+                ActionState::<Direction>::default(),
+            ));
         }
     }
 }
@@ -192,7 +194,7 @@ fn input_snake_direction(
         };
 
         if let Some(direction) = direction {
-            propose_direction.send(ProposeDirection {
+            propose_direction.write(ProposeDirection {
                 id: snake.player_number.clone(),
                 direction,
             });

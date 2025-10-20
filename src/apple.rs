@@ -75,7 +75,7 @@ fn eat_apple(
                 // The despawn and spawn could be handled by events, but that would require configuring ordering in order to make sure we don't get to an inconsistent state. https://bevy-cheatbook.github.io/programming/events.html#possible-pitfalls
                 commands.entity(apple).despawn();
                 spawn_apple(&mut commands, &assets);
-                apple_eaten.send(AppleEaten(entity));
+                apple_eaten.write(AppleEaten(entity));
                 return;
             }
         }

@@ -67,7 +67,7 @@ fn win(
 
     if let Some((name, _)) = &current_winner.0 {
         if timer.0.just_finished() {
-            won.send(Won(name.clone()));
+            won.write(Won(name.clone()));
         }
     } else {
         timer.0.reset();

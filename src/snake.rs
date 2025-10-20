@@ -19,10 +19,10 @@ impl Plugin for SnakePlugin {
                 Update,
                 (
                     grow_snake,
-                    apply_deferred,
+                    ApplyDeferred,
                     toroid_coordinates,
                     add_sprite_bundles,
-                    apply_deferred, // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
+                    ApplyDeferred, // This is needed in order to render the sprites correctly, we need to flush the sprites into the world and then update their transforms
                     set_sprite_size,
                     update_local_coordinates_to_world_transforms,
                 )
@@ -57,7 +57,7 @@ fn setup_grid_and_camera(mut commands: Commands) {
 
     commands.spawn((
         Camera2d,
-        OrthographicProjection {
+        Projection::Orthographic(OrthographicProjection {
             far: 1000.,
             near: -1000.,
             scaling_mode: bevy::render::camera::ScalingMode::AutoMin {
@@ -65,7 +65,7 @@ fn setup_grid_and_camera(mut commands: Commands) {
                 min_height: BOARD_VIEWPORT_IN_WORLD_UNITS,
             },
             ..OrthographicProjection::default_2d()
-        },
+        }),
     ));
 }
 
@@ -134,8 +134,8 @@ fn despawn_snakes(mut commands: Commands, snakes: Query<(Entity, &Snake)>) {
         snake
             .segments
             .iter()
-            .for_each(|&entity| commands.entity(entity).despawn_recursive());
-        commands.entity(entity).despawn_recursive();
+            .for_each(|&entity| commands.entity(entity).despawn());
+        commands.entity(entity).despawn();
     });
 }
 

@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.15"
+bevy = "0.16"
 rand = "0.8.5"
-bevy_egui = "0.31"
-leafwing-input-manager = "0.16"
+bevy_egui = "0.36"
+leafwing-input-manager = "0.17"
 
 
 # Enable a small amount of optimization in debug mode

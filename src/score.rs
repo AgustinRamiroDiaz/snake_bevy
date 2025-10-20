@@ -39,5 +39,8 @@ fn update_score(snakes: Query<(&Snake, &MyColor)>, mut text: Query<&mut Text, Wi
         .collect::<Vec<_>>()
         .join("");
 
-    *text.single_mut() = Text::new(score_text);
+    let Ok(mut text) = text.single_mut() else {
+        return;
+    };
+    *text = Text::new(score_text);
 }

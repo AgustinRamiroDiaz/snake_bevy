@@ -4,7 +4,7 @@ use crate::win::Won;
 
 use super::game_state::AppState;
 
-use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 
 pub(crate) struct MainMenu {
     pub(crate) max_number_of_players: usize,
@@ -12,18 +12,23 @@ pub(crate) struct MainMenu {
 
 impl Plugin for MainMenu {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EguiPlugin)
+        app.add_plugins(EguiPlugin::default())
             .insert_resource(MaxNumberOfPlayers(self.max_number_of_players))
             .insert_resource(NumberOfPlayersSelected(self.max_number_of_players))
-            .add_systems(Update, (selection).run_if(in_state(AppState::MainMenu)))
-            .add_systems(Update, (winner_text, how_to_play))
+            .add_systems(EguiPrimaryContextPass, selection.run_if(in_state(AppState::MainMenu)))
+            .add_systems(EguiPrimaryContextPass, how_to_play)
+            .add_systems(Update, winner_text)
             .add_systems(OnExit(AppState::MainMenu), remove_winner_text);
     }
 }
 
-fn how_to_play(mut contexts: Query<&mut EguiContext>) {
-    for mut ctx in contexts.iter_mut() {
-        egui::Window::new("How to play").show(ctx.get_mut(), |ui| {
+fn how_to_play(mut contexts: EguiContexts) {
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+    egui::Window::new("How to play")
+        .collapsible(false)
+        .show(ctx, |ui| {
             ui.label("`Esc` escape key to open the menu");
             ui.label("`Esc` escape key to get back into the game");
             ui.label("`Arrow keys` to move player 1");
@@ -31,27 +36,27 @@ fn how_to_play(mut contexts: Query<&mut EguiContext>) {
             ui.label("`IJKL` to move player 3");
             ui.label("`Numpad 8456` to move player 4");
         });
-    }
 }
 
 fn selection(
-    mut contexts: Query<&mut EguiContext>,
+    mut contexts: EguiContexts,
     mut number_of_players_selected: ResMut<NumberOfPlayersSelected>,
     max_number_of_players: Res<MaxNumberOfPlayers>,
 ) {
-    for mut ctx in contexts.iter_mut() {
-        egui::Window::new("Number of players selection").show(ctx.get_mut(), |ui| {
-            ui.heading("Choose");
-            ui.add(
-                egui::Slider::new(
-                    &mut number_of_players_selected.0,
-                    1..=max_number_of_players.0,
-                )
-                .text("Number of players"),
-            );
-            ui.label(format!("{} players selected", number_of_players_selected.0));
-        });
-    }
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+    egui::Window::new("Number of players selection").show(ctx, |ui| {
+        ui.heading("Choose");
+        ui.add(
+            egui::Slider::new(
+                &mut number_of_players_selected.0,
+                1..=max_number_of_players.0,
+            )
+            .text("Number of players"),
+        );
+        ui.label(format!("{} players selected", number_of_players_selected.0));
+    });
 }
 
 #[derive(Resource)]
@@ -93,6 +98,6 @@ fn winner_text(
 
 fn remove_winner_text(mut commands: Commands, query: Query<Entity, With<WinnerText>>) {
     for entity in query.iter() {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
